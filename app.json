@@ -1,0 +1,63 @@
+{
+  "expo": {
+    "name": "MonTaxi",
+    "slug": "montaxi",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "ci.montaxi.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "MonTaxi a besoin de votre position pour vous localiser et commander un taxi.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "MonTaxi a besoin de votre position en arrière-plan pour le suivi en temps réel de votre course."
+      }
+    },
+    "android": {
+      "package": "ci.montaxi.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#40E0D0"
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "POST_NOTIFICATIONS",
+        "INTERNET"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#40E0D0"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "MonTaxi a besoin d'accéder à votre position pour vous attribuer les chauffeurs les plus proches."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#40E0D0",
+          "sounds": []
+        }
+      ],
+      "expo-secure-store"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
+    }
+  }
+}

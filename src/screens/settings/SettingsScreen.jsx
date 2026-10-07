@@ -1,0 +1,218 @@
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TextInput, Alert, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { COLORS, SHADOWS } from '../../theme/colors';
+import { HeaderCurved } from '../../components/common/HeaderCurved';
+import { PrimaryButton } from '../../components/common/PrimaryButton';
+import { useAuth } from '../../context/AuthContext';
+import { userApi } from '../../api/user.api';
+import { authApi } from '../../api/auth.api';
+
+export const SettingsScreen = ({ navigation }) => {
+  const { user, logout, updateUser } = useAuth();
+
+  const [fullName, setFullName] = useState(user?.fullName || '');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // Changement de mot de passe sécurisé
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  const handleUpdateProfile = async () => {
+    try {
+      setSavingProfile(true);
+      const res = await userApi.updateProfile({ fullName, phone, email });
+      if (res.success) {
+        updateUser(res.data);
+        Alert.alert('Succès', 'Votre profil a été mis à jour.');
+      }
+    } catch (e) {
+      Alert.alert('Erreur', e.message || 'Impossible de mettre à jour le profil.');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword) {
+      Alert.alert('Champs requis', 'Veuillez saisir votre mot de passe actuel et votre nouveau mot de passe.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      Alert.alert('Mot de passe trop court', 'Le nouveau mot de passe doit comporter au moins 6 caractères.');
+      return;
+    }
+    try {
+      setSavingPassword(true);
+      await authApi.updatePassword({ currentPassword, newPassword });
+      setCurrentPassword('');
+      setNewPassword('');
+      Alert.alert('Succès', 'Votre mot de passe a été modifié avec succès.');
+    } catch (e) {
+      Alert.alert('Erreur', e.message || 'Mot de passe actuel incorrect.');
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Supprimer mon compte ?',
+      'Cette action est irréversible. Toutes vos données seront désactivées.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await userApi.deleteAccount();
+              await logout();
+            } catch (e) {
+              Alert.alert('Erreur', 'Impossible de supprimer le compte.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      <HeaderCurved title="Paramètres" subtitle="Gestion de votre compte" user={user} />
+
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Informations Personnelles */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Informations Personnelles</Text>
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Nom complet</Text>
+            <TextInput style={styles.input} value={fullName} onChangeText={setFullName} />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Téléphone</Text>
+            <TextInput style={styles.input} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Adresse e-mail</Text>
+            <TextInput style={styles.input} value={email} onChangeText={setEmail} autoCapitalize="none" />
+          </View>
+          <PrimaryButton
+            title="Enregistrer le profil"
+            onPress={handleUpdateProfile}
+            loading={savingProfile}
+            style={styles.saveBtn}
+          />
+        </View>
+
+        {/* Sécurité & Mot de Passe */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Sécurité & Mot de passe</Text>
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Mot de passe actuel</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Votre mot de passe actuel"
+              secureTextEntry
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Nouveau mot de passe (min. 6 car.)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Nouveau mot de passe"
+              secureTextEntry
+              value={newPassword}
+              onChangeText={setNewPassword}
+            />
+          </View>
+          <PrimaryButton
+            title="Changer le mot de passe"
+            variant="outline"
+            onPress={handleChangePassword}
+            loading={savingPassword}
+            style={styles.saveBtn}
+          />
+        </View>
+
+        {/* Actions du compte */}
+        <View style={styles.dangerZone}>
+          <PrimaryButton
+            title="Se déconnecter"
+            variant="outline"
+            onPress={logout}
+            icon={<Ionicons name="log-out-outline" size={20} color={COLORS.primaryDark} />}
+          />
+          <Pressable onPress={handleDeleteAccount} style={styles.deleteLink}>
+            <Text style={styles.deleteLinkText}>Supprimer définitivement mon compte</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background
+  },
+  scrollContent: {
+    padding: 20,
+    gap: 18
+  },
+  sectionCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: 18,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    gap: 12,
+    ...SHADOWS.small
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginBottom: 4
+  },
+  inputGroup: {
+    gap: 4
+  },
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textSecondary
+  },
+  input: {
+    backgroundColor: COLORS.backgroundSecondary,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: 14,
+    height: 48,
+    fontSize: 14,
+    color: COLORS.textPrimary
+  },
+  saveBtn: {
+    marginTop: 4
+  },
+  dangerZone: {
+    marginTop: 8,
+    gap: 16,
+    alignItems: 'center'
+  },
+  deleteLink: {
+    padding: 8
+  },
+  deleteLinkText: {
+    fontSize: 13,
+    color: COLORS.danger,
+    fontWeight: '600'
+  }
+});
