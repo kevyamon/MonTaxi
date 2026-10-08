@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { COLORS } from '../../theme/colors';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
@@ -9,6 +9,7 @@ import { HomeCardDriver } from '../../components/home/HomeCardDriver';
 import { BookingBottomSheet } from '../../components/ride/BookingBottomSheet';
 import { SearchDriverModal } from '../../components/ride/SearchDriverModal';
 import { ActiveRideSheet } from '../../components/ride/ActiveRideSheet';
+import { CustomAlertModal } from '../../components/common/CustomAlertModal';
 import { rideApi } from '../../api/ride.api';
 import { driverApi } from '../../api/driver.api';
 
@@ -16,16 +17,29 @@ export const HomeScreen = ({ navigation }) => {
   const { user, isDriver, updateUser } = useAuth();
   const { socket } = useSocket();
 
-  // États du flux Passager
   const [showBookingSheet, setShowBookingSheet] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchStatus, setSearchStatus] = useState('Recherche d’un chauffeur proche...');
   const [activeRide, setActiveRide] = useState(null);
   const [orderLoading, setOrderLoading] = useState(false);
 
-  // États du flux Chauffeur
   const [isOnline, setIsOnline] = useState(user?.driverInfo?.isOnline || false);
   const [statusLoading, setStatusLoading] = useState(false);
+
+  const [alertConfig, setAlertConfig] = useState({
+    visible: false,
+    type: 'info',
+    title: '',
+    message: ''
+  });
+
+  const showAlert = (type, title, message) => {
+    setAlertConfig({ visible: true, type, title, message });
+  };
+
+  const closeAlert = () => {
+    setAlertConfig((prev) => ({ ...prev, visible: false }));
+  };
 
   useEffect(() => {
     if (!socket) return;
@@ -36,7 +50,7 @@ export const HomeScreen = ({ navigation }) => {
 
     socket.on('ride:search:timeout', (data) => {
       setIsSearching(false);
-      Alert.alert('Recherche terminée', data.message);
+      showAlert('warning', 'Recherche terminée', data.message);
     });
 
     socket.on('ride:accepted', (data) => {
@@ -56,29 +70,6 @@ export const HomeScreen = ({ navigation }) => {
       setActiveRide((prev) => (prev ? { ...prev, status: 'completed', fare: data.fare } : null));
     });
 
-    socket.on('ride:request:new', (data) => {
-      if (isDriver && isOnline) {
-        Alert.alert(
-          'Nouvelle Course Reçue !',
-          `Départ : ${data.pickupAddress}\nDestination : ${data.dropoffAddress}\nMontant : ${data.fare.totalPrice} FCFA`,
-          [
-            { text: 'Refuser', style: 'cancel' },
-            {
-              text: 'Accepter',
-              onPress: async () => {
-                try {
-                  const res = await rideApi.acceptRide(data.rideId);
-                  if (res.success) setActiveRide(res.data);
-                } catch (err) {
-                  Alert.alert('Erreur', err.message || 'Impossible d’accepter la course.');
-                }
-              }
-            }
-          ]
-        );
-      }
-    });
-
     return () => {
       socket.off('ride:search:progress');
       socket.off('ride:search:timeout');
@@ -86,9 +77,8 @@ export const HomeScreen = ({ navigation }) => {
       socket.off('ride:driver_arrived');
       socket.off('ride:started');
       socket.off('ride:completed');
-      socket.off('ride:request:new');
     };
-  }, [socket, isDriver, isOnline]);
+  }, [socket]);
 
   const handleOrderConfirm = async ({ pickupAddress, dropoffAddress, tier }) => {
     try {
@@ -115,7 +105,7 @@ export const HomeScreen = ({ navigation }) => {
       }
     } catch (error) {
       setIsSearching(false);
-      Alert.alert('Erreur de commande', error.message || 'Impossible d’initier la course.');
+      showAlert('error', 'Erreur de commande', error.message || 'Impossible d’initier la course.');
     } finally {
       setOrderLoading(false);
     }
@@ -131,7 +121,7 @@ export const HomeScreen = ({ navigation }) => {
         updateUser({ driverInfo: { ...user?.driverInfo, isOnline: newStatus } });
       }
     } catch (err) {
-      Alert.alert('Erreur', err.message || 'Impossible de mettre à jour votre statut.');
+      showAlert('error', 'Erreur', err.message || 'Impossible de mettre à jour votre statut.');
     } finally {
       setStatusLoading(false);
     }
@@ -144,7 +134,7 @@ export const HomeScreen = ({ navigation }) => {
       if (actionType === 'start') await rideApi.startRide(activeRide._id);
       if (actionType === 'complete') await rideApi.completeRide(activeRide._id);
     } catch (err) {
-      Alert.alert('Erreur', err.message || 'Opération impossible.');
+      showAlert('error', 'Erreur', err.message || 'Opération impossible.');
     }
   };
 
@@ -177,7 +167,6 @@ export const HomeScreen = ({ navigation }) => {
         )}
       </ScrollView>
 
-      {/* BottomSheet de Commande Passager */}
       <BookingBottomSheet
         visible={showBookingSheet}
         onClose={() => setShowBookingSheet(false)}
@@ -185,7 +174,6 @@ export const HomeScreen = ({ navigation }) => {
         loading={orderLoading}
       />
 
-      {/* Modal de Recherche Radar */}
       <SearchDriverModal
         visible={isSearching}
         statusMessage={searchStatus}
@@ -194,6 +182,14 @@ export const HomeScreen = ({ navigation }) => {
           if (activeRide) rideApi.cancelRide(activeRide._id, 'Annulée par l’utilisateur');
           setActiveRide(null);
         }}
+      />
+
+      <CustomAlertModal
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={closeAlert}
       />
     </View>
   );

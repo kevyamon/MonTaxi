@@ -1,27 +1,42 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Linking, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOWS } from '../../theme/colors';
 import { HeaderCurved } from '../../components/common/HeaderCurved';
+import { CustomAlertModal } from '../../components/common/CustomAlertModal';
 import { useAuth } from '../../context/AuthContext';
-import { PrimaryButton } from '../../components/common/PrimaryButton';
 
 export const HelpScreen = ({ navigation }) => {
   const { user, isDriver } = useAuth();
 
+  const [alertConfig, setAlertConfig] = useState({
+    visible: false,
+    type: 'info',
+    title: '',
+    message: ''
+  });
+
+  const showAlert = (type, title, message) => {
+    setAlertConfig({ visible: true, type, title, message });
+  };
+
+  const closeAlert = () => {
+    setAlertConfig((prev) => ({ ...prev, visible: false }));
+  };
+
   const handleWhatsAppSupport = () => {
-    const phone = '2250700000000'; // Numéro support officiel
+    const phone = '2250700000000';
     const message = encodeURIComponent('Bonjour support MonTaxi, j’ai besoin d’une assistance.');
     Linking.openURL(`https://wa.me/${phone}?text=${message}`).catch(() => {
-      Alert.alert('Erreur', 'Impossible d’ouvrir WhatsApp sur cet appareil.');
+      showAlert('error', 'Erreur WhatsApp', 'Impossible d’ouvrir WhatsApp sur cet appareil.');
     });
   };
 
   const handleAIAssistant = () => {
-    Alert.alert(
+    showAlert(
+      'info',
       'Assistant IA MonTaxi',
-      'Posez vos questions sur le fonctionnement des forfaits Éco/VIP, des tarifs ou de l’application.',
-      [{ text: 'Compris' }]
+      'Posez vos questions sur le fonctionnement des forfaits Éco/VIP, des tarifs ou de l’application.'
     );
   };
 
@@ -73,7 +88,6 @@ export const HelpScreen = ({ navigation }) => {
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Canaux de Support */}
         <Text style={styles.sectionTitle}>Besoin d’aide immédiate ?</Text>
         <View style={styles.supportButtonsRow}>
           <Pressable
@@ -99,7 +113,6 @@ export const HelpScreen = ({ navigation }) => {
           </Pressable>
         </View>
 
-        {/* Guides interactifs */}
         <Text style={styles.sectionTitle}>
           {isDriver ? 'Guide du Chauffeur' : 'Guide du Passager'}
         </Text>
@@ -115,29 +128,23 @@ export const HelpScreen = ({ navigation }) => {
           ))}
         </View>
       </ScrollView>
+
+      <CustomAlertModal
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={closeAlert}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background
-  },
-  scrollContent: {
-    padding: 20
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
-    marginBottom: 12
-  },
-  supportButtonsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  scrollContent: { padding: 20 },
+  sectionTitle: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 12 },
+  supportButtonsRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
   supportCard: {
     flex: 1,
     backgroundColor: COLORS.card,
@@ -147,9 +154,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     ...SHADOWS.small
   },
-  cardPressed: {
-    opacity: 0.8
-  },
+  cardPressed: { opacity: 0.8 },
   supportIconBox: {
     width: 42,
     height: 42,
@@ -158,19 +163,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 10
   },
-  supportCardTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.textPrimary
-  },
-  supportCardSub: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-    marginTop: 2
-  },
-  cardsContainer: {
-    gap: 12
-  },
+  supportCardTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
+  supportCardSub: { fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
+  cardsContainer: { gap: 12 },
   guideCard: {
     backgroundColor: COLORS.card,
     borderRadius: 16,
@@ -179,21 +174,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     ...SHADOWS.small
   },
-  guideHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 8
-  },
-  guideTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    flex: 1
-  },
-  guideText: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    lineHeight: 18
-  }
+  guideHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
+  guideTitle: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, flex: 1 },
+  guideText: { fontSize: 13, color: COLORS.textSecondary, lineHeight: 18 }
 });

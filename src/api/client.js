@@ -6,12 +6,29 @@ const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://montaxi-backend
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  timeout: 45000,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json'
   }
 });
+
+// Extraction intelligente du message d'erreur serveur
+export const getApiErrorMessage = (error) => {
+  if (error?.response?.data?.message) {
+    if (error.response.data.errors && error.response.data.errors.length > 0) {
+      return `${error.response.data.message} : ${error.response.data.errors[0].message}`;
+    }
+    return error.response.data.message;
+  }
+  if (error?.code === 'ECONNABORTED' || error?.message?.includes('timeout')) {
+    return 'Le serveur met du temps à répondre (démarrage du serveur Render). Veuillez réessayer.';
+  }
+  if (error?.message === 'Network Error' || !error?.response) {
+    return 'Connexion au serveur MonTaxi impossible. Vérifiez votre accès Internet.';
+  }
+  return error?.message || 'Une erreur inattendue est survenue.';
+};
 
 // Injection automatique du token d'accès
 apiClient.interceptors.request.use(

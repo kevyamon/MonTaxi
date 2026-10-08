@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, Alert, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOWS } from '../../theme/colors';
 import { HeaderCurved } from '../../components/common/HeaderCurved';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
+import { CustomAlertModal } from '../../components/common/CustomAlertModal';
 import { useAuth } from '../../context/AuthContext';
 import { userApi } from '../../api/user.api';
 import { authApi } from '../../api/auth.api';
@@ -16,10 +17,33 @@ export const SettingsScreen = ({ navigation }) => {
   const [email, setEmail] = useState(user?.email || '');
   const [savingProfile, setSavingProfile] = useState(false);
 
-  // Changement de mot de passe sécurisé
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [savingPassword, setSavingPassword] = useState(false);
+
+  const [alertConfig, setAlertConfig] = useState({
+    visible: false,
+    type: 'info',
+    title: '',
+    message: '',
+    secondaryText: null,
+    onSecondary: null
+  });
+
+  const showAlert = (type, title, message, secondaryText = null, onSecondary = null) => {
+    setAlertConfig({
+      visible: true,
+      type,
+      title,
+      message,
+      secondaryText,
+      onSecondary
+    });
+  };
+
+  const closeAlert = () => {
+    setAlertConfig((prev) => ({ ...prev, visible: false }));
+  };
 
   const handleUpdateProfile = async () => {
     try {
@@ -27,10 +51,10 @@ export const SettingsScreen = ({ navigation }) => {
       const res = await userApi.updateProfile({ fullName, phone, email });
       if (res.success) {
         updateUser(res.data);
-        Alert.alert('Succès', 'Votre profil a été mis à jour.');
+        showAlert('success', 'Profil mis à jour', 'Vos informations ont été enregistrées avec succès.');
       }
     } catch (e) {
-      Alert.alert('Erreur', e.message || 'Impossible de mettre à jour le profil.');
+      showAlert('error', 'Erreur de mise à jour', e.message || 'Impossible de mettre à jour le profil.');
     } finally {
       setSavingProfile(false);
     }
@@ -38,11 +62,11 @@ export const SettingsScreen = ({ navigation }) => {
 
   const handleChangePassword = async () => {
     if (!currentPassword || !newPassword) {
-      Alert.alert('Champs requis', 'Veuillez saisir votre mot de passe actuel et votre nouveau mot de passe.');
+      showAlert('warning', 'Champs requis', 'Veuillez saisir votre mot de passe actuel et votre nouveau mot de passe.');
       return;
     }
     if (newPassword.length < 6) {
-      Alert.alert('Mot de passe trop court', 'Le nouveau mot de passe doit comporter au moins 6 caractères.');
+      showAlert('warning', 'Mot de passe trop court', 'Le nouveau mot de passe doit comporter au moins 6 caractères.');
       return;
     }
     try {
@@ -50,33 +74,21 @@ export const SettingsScreen = ({ navigation }) => {
       await authApi.updatePassword({ currentPassword, newPassword });
       setCurrentPassword('');
       setNewPassword('');
-      Alert.alert('Succès', 'Votre mot de passe a été modifié avec succès.');
+      showAlert('success', 'Succès', 'Votre mot de passe a été modifié avec succès.');
     } catch (e) {
-      Alert.alert('Erreur', e.message || 'Mot de passe actuel incorrect.');
+      showAlert('error', 'Erreur', e.message || 'Mot de passe actuel incorrect.');
     } finally {
       setSavingPassword(false);
     }
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
+    showAlert(
+      'warning',
       'Supprimer mon compte ?',
       'Cette action est irréversible. Toutes vos données seront désactivées.',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Supprimer',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await userApi.deleteAccount();
-              await logout();
-            } catch (e) {
-              Alert.alert('Erreur', 'Impossible de supprimer le compte.');
-            }
-          }
-        }
-      ]
+      'Annuler',
+      closeAlert
     );
   };
 
@@ -85,7 +97,6 @@ export const SettingsScreen = ({ navigation }) => {
       <HeaderCurved title="Paramètres" subtitle="Gestion de votre compte" user={user} />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Informations Personnelles */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Informations Personnelles</Text>
           <View style={styles.inputGroup}>
@@ -108,7 +119,6 @@ export const SettingsScreen = ({ navigation }) => {
           />
         </View>
 
-        {/* Sécurité & Mot de Passe */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Sécurité & Mot de passe</Text>
           <View style={styles.inputGroup}>
@@ -140,7 +150,6 @@ export const SettingsScreen = ({ navigation }) => {
           />
         </View>
 
-        {/* Actions du compte */}
         <View style={styles.dangerZone}>
           <PrimaryButton
             title="Se déconnecter"
@@ -153,19 +162,23 @@ export const SettingsScreen = ({ navigation }) => {
           </Pressable>
         </View>
       </ScrollView>
+
+      <CustomAlertModal
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        secondaryButtonText={alertConfig.secondaryText}
+        onSecondaryPress={alertConfig.onSecondary}
+        onClose={closeAlert}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background
-  },
-  scrollContent: {
-    padding: 20,
-    gap: 18
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  scrollContent: { padding: 20, gap: 18 },
   sectionCard: {
     backgroundColor: COLORS.card,
     borderRadius: 18,
@@ -175,20 +188,9 @@ const styles = StyleSheet.create({
     gap: 12,
     ...SHADOWS.small
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
-    marginBottom: 4
-  },
-  inputGroup: {
-    gap: 4
-  },
-  inputLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.textSecondary
-  },
+  sectionTitle: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 4 },
+  inputGroup: { gap: 4 },
+  inputLabel: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary },
   input: {
     backgroundColor: COLORS.backgroundSecondary,
     borderRadius: 12,
@@ -199,20 +201,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.textPrimary
   },
-  saveBtn: {
-    marginTop: 4
-  },
-  dangerZone: {
-    marginTop: 8,
-    gap: 16,
-    alignItems: 'center'
-  },
-  deleteLink: {
-    padding: 8
-  },
-  deleteLinkText: {
-    fontSize: 13,
-    color: COLORS.danger,
-    fontWeight: '600'
-  }
+  saveBtn: { marginTop: 4 },
+  dangerZone: { marginTop: 8, gap: 16, alignItems: 'center' },
+  deleteLink: { padding: 8 },
+  deleteLinkText: { fontSize: 13, color: COLORS.danger, fontWeight: '600' }
 });

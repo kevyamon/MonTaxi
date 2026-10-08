@@ -8,6 +8,7 @@ import {
 } from '../utils/storage';
 import { authApi } from '../api/auth.api';
 import { userApi } from '../api/user.api';
+import { getApiErrorMessage } from '../api/client';
 
 const AuthContext = createContext(null);
 
@@ -48,29 +49,37 @@ export const AuthProvider = ({ children }) => {
   }, [initAuth]);
 
   const login = async (identifier, password) => {
-    const res = await authApi.login({ identifier, password });
-    if (res.success && res.data) {
-      const { user: userData, tokens } = res.data;
-      setUser(userData);
-      setToken(tokens.accessToken);
-      await saveAuthTokens(tokens.accessToken, tokens.refreshToken);
-      await saveUserProfile(userData);
-      return userData;
+    try {
+      const res = await authApi.login({ identifier, password });
+      if (res.success && res.data) {
+        const { user: userData, tokens } = res.data;
+        setUser(userData);
+        setToken(tokens.accessToken);
+        await saveAuthTokens(tokens.accessToken, tokens.refreshToken);
+        await saveUserProfile(userData);
+        return userData;
+      }
+      throw new Error(res.message || 'Échec de la connexion');
+    } catch (e) {
+      throw new Error(getApiErrorMessage(e));
     }
-    throw new Error(res.message || 'Échec de la connexion');
   };
 
   const register = async (userData) => {
-    const res = await authApi.register(userData);
-    if (res.success && res.data) {
-      const { user: newUser, tokens } = res.data;
-      setUser(newUser);
-      setToken(tokens.accessToken);
-      await saveAuthTokens(tokens.accessToken, tokens.refreshToken);
-      await saveUserProfile(newUser);
-      return newUser;
+    try {
+      const res = await authApi.register(userData);
+      if (res.success && res.data) {
+        const { user: newUser, tokens } = res.data;
+        setUser(newUser);
+        setToken(tokens.accessToken);
+        await saveAuthTokens(tokens.accessToken, tokens.refreshToken);
+        await saveUserProfile(newUser);
+        return newUser;
+      }
+      throw new Error(res.message || 'Échec de l’inscription');
+    } catch (e) {
+      throw new Error(getApiErrorMessage(e));
     }
-    throw new Error(res.message || 'Échec de l’inscription');
   };
 
   const logout = async () => {
