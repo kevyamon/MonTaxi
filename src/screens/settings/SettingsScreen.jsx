@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOWS } from '../../theme/colors';
@@ -30,6 +30,14 @@ export const SettingsScreen = ({ navigation }) => {
     onSecondary: null
   });
 
+  useEffect(() => {
+    if (user) {
+      if (user.fullName) setFullName(user.fullName);
+      if (user.phone) setPhone(user.phone);
+      if (user.email) setEmail(user.email);
+    }
+  }, [user]);
+
   const showAlert = (type, title, message, secondaryText = null, onSecondary = null) => {
     setAlertConfig({
       visible: true,
@@ -48,7 +56,11 @@ export const SettingsScreen = ({ navigation }) => {
   const handleUpdateProfile = async () => {
     try {
       setSavingProfile(true);
-      const res = await userApi.updateProfile({ fullName, phone, email });
+      const res = await userApi.updateProfile({
+        fullName: fullName.trim(),
+        phone: phone.trim(),
+        email: email.trim().toLowerCase()
+      });
       if (res.success) {
         updateUser(res.data);
         showAlert('success', 'Profil mis à jour', 'Vos informations ont été enregistrées avec succès.');
@@ -104,8 +116,13 @@ export const SettingsScreen = ({ navigation }) => {
             <TextInput style={styles.input} value={fullName} onChangeText={setFullName} />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Téléphone</Text>
-            <TextInput style={styles.input} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+            <Text style={styles.inputLabel}>Numéro de téléphone</Text>
+            <TextInput
+              style={styles.input}
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+            />
           </View>
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Adresse e-mail</Text>
@@ -157,8 +174,12 @@ export const SettingsScreen = ({ navigation }) => {
             onPress={logout}
             icon={<Ionicons name="log-out-outline" size={20} color={COLORS.primaryDark} />}
           />
-          <Pressable onPress={handleDeleteAccount} style={styles.deleteLink}>
-            <Text style={styles.deleteLinkText}>Supprimer définitivement mon compte</Text>
+          <Pressable
+            style={({ pressed }) => [styles.deleteButton, pressed && styles.deleteButtonPressed]}
+            onPress={handleDeleteAccount}
+          >
+            <Ionicons name="trash-outline" size={18} color={COLORS.danger} />
+            <Text style={styles.deleteButtonText}>Supprimer définitivement mon compte</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -202,7 +223,25 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary
   },
   saveBtn: { marginTop: 4 },
-  dangerZone: { marginTop: 8, gap: 16, alignItems: 'center' },
-  deleteLink: { padding: 8 },
-  deleteLinkText: { fontSize: 13, color: COLORS.danger, fontWeight: '600' }
+  dangerZone: { marginTop: 8, gap: 14, alignItems: 'stretch' },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: COLORS.dangerLight,
+    borderWidth: 1,
+    borderColor: COLORS.danger,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16
+  },
+  deleteButtonPressed: {
+    opacity: 0.8
+  },
+  deleteButtonText: {
+    fontSize: 14,
+    color: COLORS.danger,
+    fontWeight: '700'
+  }
 });

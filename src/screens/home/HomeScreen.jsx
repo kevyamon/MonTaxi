@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { COLORS } from '../../theme/colors';
 import { useAuth } from '../../context/AuthContext';
@@ -10,6 +10,7 @@ import { BookingBottomSheet } from '../../components/ride/BookingBottomSheet';
 import { SearchDriverModal } from '../../components/ride/SearchDriverModal';
 import { ActiveRideSheet } from '../../components/ride/ActiveRideSheet';
 import { CustomAlertModal } from '../../components/common/CustomAlertModal';
+import { getCurrentPosition, evaluateLocation } from '../../services/location.service';
 import { rideApi } from '../../api/ride.api';
 import { driverApi } from '../../api/driver.api';
 
@@ -17,12 +18,20 @@ export const HomeScreen = ({ navigation }) => {
   const { user, isDriver, updateUser } = useAuth();
   const { socket } = useSocket();
 
+  // Localisation & Geofencing
+  const [coords, setCoords] = useState({ latitude: 5.2719, longitude: -3.5956 });
+  const [locationAddress, setLocationAddress] = useState('Recherche de votre position...');
+  const [isInCoverage, setIsInCoverage] = useState(true);
+  const [locationLoading, setLocationLoading] = useState(false);
+
+  // Flux Passager
   const [showBookingSheet, setShowBookingSheet] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchStatus, setSearchStatus] = useState('Recherche d’un chauffeur proche...');
   const [activeRide, setActiveRide] = useState(null);
   const [orderLoading, setOrderLoading] = useState(false);
 
+  // Flux Chauffeur
   const [isOnline, setIsOnline] = useState(user?.driverInfo?.isOnline || false);
   const [statusLoading, setStatusLoading] = useState(false);
 
@@ -41,31 +50,51 @@ export const HomeScreen = ({ navigation }) => {
     setAlertConfig((prev) => ({ ...prev, visible: false }));
   };
 
+  const refreshLocation = useCallback(async () => {
+    try {
+      setLocationLoading(true);
+      const pos = await getCurrentPosition();
+      if (pos) {
+        setCoords(pos);
+        const evalResult = await evaluateLocation(pos.latitude, pos.longitude);
+        setIsInCoverage(evalResult.isInCoverage);
+        setLocationAddress(evalResult.address);
+      } else {
+        // Fallback Bonoua
+        const defaultEval = await evaluateLocation(5.2719, -3.5956);
+        setCoords({ latitude: 5.2719, longitude: -3.5956 });
+        setIsInCoverage(defaultEval.isInCoverage);
+        setLocationAddress(defaultEval.address);
+      }
+    } catch (err) {
+      console.warn('[HomeScreen] Erreur chargement position :', err);
+    } finally {
+      setLocationLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshLocation();
+  }, [refreshLocation]);
+
   useEffect(() => {
     if (!socket) return;
 
-    socket.on('ride:search:progress', (data) => {
-      setSearchStatus(data.message);
-    });
-
+    socket.on('ride:search:progress', (data) => setSearchStatus(data.message));
     socket.on('ride:search:timeout', (data) => {
       setIsSearching(false);
       showAlert('warning', 'Recherche terminée', data.message);
     });
-
     socket.on('ride:accepted', (data) => {
       setIsSearching(false);
       setActiveRide(data.ride);
     });
-
     socket.on('ride:driver_arrived', () => {
       setActiveRide((prev) => (prev ? { ...prev, status: 'driver_arriving' } : null));
     });
-
     socket.on('ride:started', () => {
       setActiveRide((prev) => (prev ? { ...prev, status: 'in_progress' } : null));
     });
-
     socket.on('ride:completed', (data) => {
       setActiveRide((prev) => (prev ? { ...prev, status: 'completed', fare: data.fare } : null));
     });
@@ -81,6 +110,10 @@ export const HomeScreen = ({ navigation }) => {
   }, [socket]);
 
   const handleOrderConfirm = async ({ pickupAddress, dropoffAddress, tier }) => {
+    if (!isInCoverage) {
+      showAlert('error', 'Zone non couverte', 'Vous devez être dans une zone d’activité pour commander.');
+      return;
+    }
     try {
       setOrderLoading(true);
       setShowBookingSheet(false);
@@ -91,11 +124,11 @@ export const HomeScreen = ({ navigation }) => {
         tier,
         pickupLocation: {
           address: pickupAddress,
-          coordinates: [-4.008256, 5.359952]
+          coordinates: [coords.longitude, coords.latitude]
         },
         dropoffLocation: {
           address: dropoffAddress,
-          coordinates: [-4.015256, 5.368952]
+          coordinates: [coords.longitude + 0.008, coords.latitude + 0.008]
         }
       };
 
@@ -142,7 +175,7 @@ export const HomeScreen = ({ navigation }) => {
     <View style={styles.container}>
       <HeaderCurved
         title="MonTaxi"
-        subtitle="Abobo, à 30m de Marché central"
+        subtitle={locationAddress}
         user={user}
         onProfilePress={() => navigation.navigate('Settings')}
       />
@@ -163,7 +196,12 @@ export const HomeScreen = ({ navigation }) => {
             totalRides={user?.driverInfo?.totalRides || 0}
           />
         ) : (
-          <HomeCardPassenger onOrderPress={() => setShowBookingSheet(true)} />
+          <HomeCardPassenger
+            onOrderPress={() => setShowBookingSheet(true)}
+            isInCoverage={isInCoverage}
+            onRefreshLocation={refreshLocation}
+            locationLoading={locationLoading}
+          />
         )}
       </ScrollView>
 
@@ -171,6 +209,7 @@ export const HomeScreen = ({ navigation }) => {
         visible={showBookingSheet}
         onClose={() => setShowBookingSheet(false)}
         onConfirmOrder={handleOrderConfirm}
+        pickupAddress={locationAddress}
         loading={orderLoading}
       />
 

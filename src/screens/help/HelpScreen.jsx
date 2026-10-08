@@ -49,7 +49,7 @@ export const HelpScreen = ({ navigation }) => {
     {
       title: 'Différence entre Éco et VIP',
       text: 'Le forfait Éco est économique pour un trajet partagé. Le forfait VIP vous garantit un taxi privatisé avec confort supérieur.',
-      icon: 'sparkles-outline'
+      icon: 'shield-checkmark-outline'
     },
     {
       title: 'Modes de paiement acceptés',

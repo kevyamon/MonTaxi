@@ -46,7 +46,7 @@ export const RegisterScreen = ({ navigation }) => {
 
   const handleRegister = async () => {
     if (!fullName.trim() || !phone.trim() || !email.trim() || !password.trim()) {
-      showAlert('warning', 'Champs requis', 'Veuillez renseigner l’ensemble des informations demandées.');
+      showAlert('warning', 'Champs requis', 'Veuillez renseigner toutes les informations demandées.');
       return;
     }
     if (password.length < 6) {
@@ -78,10 +78,12 @@ export const RegisterScreen = ({ navigation }) => {
       <ScrollView
         contentContainerStyle={[
           styles.container,
-          { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }
+          { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 180 }
         ]}
         keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
+        nestedScrollEnabled={true}
+        bounces={true}
       >
         <View style={styles.header}>
           <View style={styles.logoBadge}>

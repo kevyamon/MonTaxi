@@ -78,10 +78,12 @@ export const LoginScreen = ({ navigation }) => {
       <ScrollView
         contentContainerStyle={[
           styles.container,
-          { paddingTop: insets.top + 32, paddingBottom: insets.bottom + 40 }
+          { paddingTop: insets.top + 32, paddingBottom: insets.bottom + 180 }
         ]}
         keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
+        nestedScrollEnabled={true}
+        bounces={true}
       >
         <View style={styles.header}>
           <View style={styles.logoBadge}>

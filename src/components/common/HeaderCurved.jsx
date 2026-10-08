@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Image, Pressable, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOWS } from '../../theme/colors';
 
 export const HeaderCurved = ({ title = 'MonTaxi', subtitle, user, onProfilePress }) => {
@@ -9,12 +10,17 @@ export const HeaderCurved = ({ title = 'MonTaxi', subtitle, user, onProfilePress
 
   return (
     <View style={[styles.headerContainer, { paddingTop: insets.top + 8 }]}>
+      <StatusBar backgroundColor={COLORS.primary} barStyle="light-content" />
+
       <View style={styles.contentRow}>
         <View style={styles.textContainer}>
           <Text style={styles.brandTitle}>{title}</Text>
-          <Text style={styles.addressSubtitle} numberOfLines={1} ellipsizeMode="tail">
-            {subtitle || 'Abidjan, Côte d’Ivoire'}
-          </Text>
+          <View style={styles.locationBadge}>
+            <Ionicons name="location-sharp" size={14} color={COLORS.secondary} style={styles.pinIcon} />
+            <Text style={styles.addressSubtitle} numberOfLines={1} ellipsizeMode="tail">
+              {subtitle || 'Position actuelle'}
+            </Text>
+          </View>
         </View>
 
         <Pressable
@@ -40,14 +46,12 @@ export const HeaderCurved = ({ title = 'MonTaxi', subtitle, user, onProfilePress
 
 const styles = StyleSheet.create({
   headerContainer: {
-    backgroundColor: COLORS.card,
+    backgroundColor: COLORS.primary,
     paddingHorizontal: 20,
-    paddingBottom: 24,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.medium
+    paddingBottom: 22,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    ...SHADOWS.large
   },
   contentRow: {
     flexDirection: 'row',
@@ -59,31 +63,40 @@ const styles = StyleSheet.create({
     marginRight: 12
   },
   brandTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: COLORS.primaryDark,
-    letterSpacing: -0.5
+    fontSize: 26,
+    fontWeight: '900',
+    color: COLORS.textLight,
+    letterSpacing: -0.6
+  },
+  locationBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 3
+  },
+  pinIcon: {
+    marginRight: 4
   },
   addressSubtitle: {
     fontSize: 13,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
-    marginTop: 2
+    color: 'rgba(255, 255, 255, 0.95)',
+    fontWeight: '600',
+    flexShrink: 1
   },
   avatarButton: {
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: COLORS.primaryLight,
-    borderWidth: 2,
-    borderColor: COLORS.primary,
+    backgroundColor: COLORS.card,
+    borderWidth: 2.5,
+    borderColor: 'rgba(255, 255, 255, 0.85)',
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    ...SHADOWS.small
   },
   avatarPressed: {
-    opacity: 0.8,
-    transform: [{ scale: 0.96 }]
+    opacity: 0.85,
+    transform: [{ scale: 0.95 }]
   },
   avatarImage: {
     width: '100%',
@@ -92,23 +105,24 @@ const styles = StyleSheet.create({
   avatarFallback: {
     width: '100%',
     height: '100%',
+    backgroundColor: COLORS.card,
     alignItems: 'center',
     justifyContent: 'center'
   },
   avatarText: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '800',
     color: COLORS.primaryDark
   },
   curvedBottom: {
     position: 'absolute',
-    bottom: -10,
-    left: 40,
-    right: 40,
-    height: 10,
-    backgroundColor: COLORS.card,
+    bottom: -8,
+    left: 45,
+    right: 45,
+    height: 8,
+    backgroundColor: COLORS.primaryDark,
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 16,
-    opacity: 0.3
+    opacity: 0.35
   }
 });
