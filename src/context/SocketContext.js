@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 
-const SOCKET_URL = 'http://10.0.2.2:5000'; // Émulateur Android (ou IP LAN)
+const SOCKET_URL = process.env.EXPO_PUBLIC_SOCKET_URL || 'https://montaxi-backend.onrender.com';
 
 const SocketContext = createContext(null);
 

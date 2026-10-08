@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { getAccessToken, getRefreshToken, saveAuthTokens, clearAuthSession } from '../utils/storage';
 
-// Base URL pour le serveur MonTaxi (adaptable selon l'environnement)
-const API_BASE_URL = 'http://10.0.2.2:5000/api'; // Pour émulateur Android (ou IP LAN en physique)
+// Base URL pour le serveur MonTaxi (dynamique depuis .env ou Render)
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://montaxi-backend.onrender.com/api';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
