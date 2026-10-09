@@ -1,12 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
-import { Video, ResizeMode } from 'expo-av';
+import { View, Text, StyleSheet, Image, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOWS } from '../../theme/colors';
 import { PrimaryButton } from '../common/PrimaryButton';
-
-// Flag de session pour jouer la vidéo une seule fois par ouverture de l'application
-let hasPlayedPassengerVideoSession = false;
 
 export const HomeCardPassenger = ({
   onOrderPress,
@@ -15,7 +11,6 @@ export const HomeCardPassenger = ({
   locationLoading = false
 }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const videoRef = useRef(null);
 
   useEffect(() => {
     // Fondu d'entrée doux de la carte
@@ -53,32 +48,17 @@ export const HomeCardPassenger = ({
   return (
     <Animated.View style={[styles.cardContainer, { opacity: fadeAnim }]}>
       <View style={styles.imageWrapper}>
-        <Video
-          ref={videoRef}
-          source={require('../../../assets/homevid.mp4')}
-          style={styles.taxiVideo}
-          resizeMode={ResizeMode.COVER}
-          shouldPlay={!hasPlayedPassengerVideoSession}
-          isLooping={false}
-          isMuted={true}
-          useNativeControls={false}
-          usePoster={true}
-          posterSource={require('../../../assets/logo.png')}
-          posterStyle={{ resizeMode: 'cover' }}
-          onPlaybackStatusUpdate={(status) => {
-            if (status.isLoaded && status.didJustFinish) {
-              hasPlayedPassengerVideoSession = true;
-            }
-          }}
+        <Image
+          source={require('../../../assets/homepst.png')}
+          style={styles.taxiImage}
+          resizeMode="cover"
         />
-        <View style={styles.badgePromo}>
-          <Ionicons name="flash" size={14} color={COLORS.textPrimary} />
-          <Text style={styles.badgeText}>Service Rapide</Text>
-        </View>
       </View>
 
       <View style={styles.infoContent}>
-        <Text style={styles.title}>Besoin d’un taxi maintenant ?</Text>
+        <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
+          Besoin d’un taxi maintenant ?
+        </Text>
         <Text style={styles.description}>
           Commandez votre course en un clic avec des chauffeurs certifiés et les meilleurs tarifs de la région.
         </Text>
@@ -139,39 +119,21 @@ const styles = StyleSheet.create({
     marginTop: 8
   },
   imageWrapper: {
-    height: 200,
+    height: 180,
     width: '100%',
     backgroundColor: COLORS.backgroundSecondary,
     position: 'relative',
     overflow: 'hidden'
   },
-  taxiVideo: {
+  taxiImage: {
     width: '100%',
     height: '100%'
   },
-  badgePromo: {
-    position: 'absolute',
-    top: 14,
-    left: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.secondary,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
-    ...SHADOWS.small
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.textPrimary
-  },
   infoContent: {
-    padding: 20
+    padding: 18
   },
   title: {
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: '800',
     color: COLORS.textPrimary,
     letterSpacing: -0.3

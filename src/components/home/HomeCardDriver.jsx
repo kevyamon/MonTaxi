@@ -1,79 +1,101 @@
 import React, { useRef } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Video, ResizeMode } from 'expo-av';
+import { View, Text, StyleSheet, Image, Animated, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOWS } from '../../theme/colors';
-import { PrimaryButton } from '../common/PrimaryButton';
-
-let hasPlayedDriverVideoSession = false;
 
 export const HomeCardDriver = ({ isOnline, onToggleStatus, loading, totalRides = 0 }) => {
-  const videoRef = useRef(null);
+  const buttonScale = useRef(new Animated.Value(1)).current;
+
+  const handlePress = () => {
+    Animated.sequence([
+      Animated.timing(buttonScale, {
+        toValue: 0.94,
+        duration: 90,
+        useNativeDriver: true
+      }),
+      Animated.spring(buttonScale, {
+        toValue: 1,
+        friction: 4,
+        tension: 160,
+        useNativeDriver: true
+      })
+    ]).start();
+    onToggleStatus();
+  };
 
   return (
     <View style={styles.cardContainer}>
       <View style={styles.imageWrapper}>
-        <Video
-          ref={videoRef}
-          source={require('../../../assets/homevid.mp4')}
-          style={styles.taxiVideo}
-          resizeMode={ResizeMode.COVER}
-          shouldPlay={!hasPlayedDriverVideoSession}
-          isLooping={false}
-          isMuted={true}
-          useNativeControls={false}
-          usePoster={true}
-          posterSource={require('../../../assets/logo.png')}
-          posterStyle={{ resizeMode: 'cover' }}
-          onPlaybackStatusUpdate={(status) => {
-            if (status.isLoaded && status.didJustFinish) {
-              hasPlayedDriverVideoSession = true;
-            }
-          }}
+        <Image
+          source={require('../../../assets/homepst.png')}
+          style={styles.taxiImage}
+          resizeMode="cover"
         />
-        <View style={[styles.statusBadge, isOnline ? styles.onlineBadge : styles.offlineBadge]}>
-          <View style={[styles.statusDot, isOnline ? styles.onlineDot : styles.offlineDot]} />
-          <Text style={[styles.statusText, isOnline ? styles.onlineText : styles.offlineText]}>
-            {isOnline ? 'En Ligne (Prêt à recevoir)' : 'Hors Ligne'}
-          </Text>
-        </View>
       </View>
 
       <View style={styles.infoContent}>
-        <Text style={styles.title}>
+        <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
           {isOnline ? 'Prêt pour votre prochaine course' : 'Passez en ligne pour travailler'}
         </Text>
-        <Text style={styles.description}>
+        <Text style={styles.description} numberOfLines={2}>
           {isOnline
-            ? 'Vous recevrez automatiquement les notifications et alertes radar des clients à proximité.'
+            ? 'Vous recevez automatiquement les notifications et alertes radar des clients à proximité.'
             : 'Activez votre disponibilité pour commencer à recevoir des courses dans votre zone.'}
         </Text>
 
-        <View style={styles.statsRow}>
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>{totalRides}</Text>
-            <Text style={styles.statLabel}>Courses réalisées</Text>
+        <View style={styles.statsContainer}>
+          <View style={styles.immersiveStatCard}>
+            <View style={styles.statHeader}>
+              <View style={[styles.statIconBox, { backgroundColor: COLORS.primaryLight }]}>
+                <Ionicons name="car-sport" size={16} color={COLORS.primaryDark} />
+              </View>
+              <View style={styles.statusPill}>
+                <Text style={styles.statusPillText}>Actif</Text>
+              </View>
+            </View>
+            <Text style={styles.immersiveStatValue}>{totalRides}</Text>
+            <Text style={styles.immersiveStatLabel}>Courses réalisées</Text>
           </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>5.0</Text>
-            <Text style={styles.statLabel}>Note moyenne</Text>
+
+          <View style={styles.immersiveStatCard}>
+            <View style={styles.statHeader}>
+              <View style={[styles.statIconBox, { backgroundColor: '#FEF3C7' }]}>
+                <Ionicons name="shield-checkmark-outline" size={16} color="#D97706" />
+              </View>
+              <View style={[styles.statusPill, { backgroundColor: '#FEF3C7' }]}>
+                <Text style={[styles.statusPillText, { color: '#B45309' }]}>5.0 / 5</Text>
+              </View>
+            </View>
+            <Text style={styles.immersiveStatValue}>5.0</Text>
+            <Text style={styles.immersiveStatLabel}>Note moyenne</Text>
           </View>
         </View>
 
-        <PrimaryButton
-          title={isOnline ? 'Se déconnecter (Pause)' : 'Passer en ligne'}
-          onPress={onToggleStatus}
-          loading={loading}
-          variant={isOnline ? 'outline' : 'primary'}
-          icon={
+        <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
+          <Pressable
+            style={[
+              styles.actionButton,
+              isOnline ? styles.actionButtonOffline : styles.actionButtonOnline,
+              loading && styles.buttonDisabled
+            ]}
+            onPress={handlePress}
+            disabled={loading}
+          >
             <Ionicons
               name={isOnline ? 'pause-circle' : 'play-circle'}
               size={20}
-              color={isOnline ? COLORS.primaryDark : COLORS.textPrimary}
+              color={isOnline ? COLORS.textPrimary : COLORS.textLight}
             />
-          }
-          style={styles.toggleButton}
-        />
+            <Text
+              style={[
+                styles.actionButtonText,
+                isOnline ? styles.actionButtonTextOffline : styles.actionButtonTextOnline
+              ]}
+            >
+              {loading ? 'Mise à jour...' : isOnline ? 'Se mettre en pause' : 'Passer en ligne'}
+            </Text>
+          </Pressable>
+        </Animated.View>
       </View>
     </View>
   );
@@ -82,103 +104,117 @@ export const HomeCardDriver = ({ isOnline, onToggleStatus, loading, totalRides =
 const styles = StyleSheet.create({
   cardContainer: {
     backgroundColor: COLORS.card,
-    borderRadius: 24,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: COLORS.border,
     overflow: 'hidden',
     ...SHADOWS.medium
   },
   imageWrapper: {
-    height: 190,
+    height: 130,
     width: '100%',
     backgroundColor: COLORS.backgroundSecondary,
     position: 'relative',
     overflow: 'hidden'
   },
-  taxiVideo: {
+  taxiImage: {
     width: '100%',
     height: '100%'
   },
-  statusBadge: {
-    position: 'absolute',
-    top: 14,
-    left: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
-    gap: 6,
-    ...SHADOWS.small
-  },
-  onlineBadge: {
-    backgroundColor: COLORS.successLight
-  },
-  offlineBadge: {
-    backgroundColor: COLORS.cardSecondary
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4
-  },
-  onlineDot: {
-    backgroundColor: COLORS.success
-  },
-  offlineDot: {
-    backgroundColor: COLORS.textMuted
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '700'
-  },
-  onlineText: {
-    color: COLORS.success
-  },
-  offlineText: {
-    color: COLORS.textSecondary
-  },
   infoContent: {
-    padding: 20
+    padding: 14
   },
   title: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '800',
     color: COLORS.textPrimary,
     letterSpacing: -0.3
   },
   description: {
-    fontSize: 13,
+    fontSize: 12,
     color: COLORS.textSecondary,
-    lineHeight: 18,
-    marginTop: 6
+    lineHeight: 16,
+    marginTop: 3,
+    marginBottom: 10
   },
-  statsRow: {
+  statsContainer: {
     flexDirection: 'row',
-    gap: 12,
-    marginVertical: 16
+    gap: 10,
+    marginBottom: 12
   },
-  statBox: {
+  immersiveStatCard: {
     flex: 1,
     backgroundColor: COLORS.backgroundSecondary,
-    padding: 12,
-    borderRadius: 12,
+    borderRadius: 14,
+    padding: 10,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    alignItems: 'center'
+    borderColor: COLORS.border,
+    ...SHADOWS.small
   },
-  statValue: {
-    fontSize: 18,
+  statHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6
+  },
+  statIconBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  statusPill: {
+    backgroundColor: COLORS.primaryLight,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6
+  },
+  statusPillText: {
+    fontSize: 10,
     fontWeight: '800',
+    color: COLORS.primaryDark
+  },
+  immersiveStatValue: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: COLORS.textPrimary,
+    letterSpacing: -0.4
+  },
+  immersiveStatLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+    marginTop: 1
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 14,
+    ...SHADOWS.small
+  },
+  actionButtonOnline: {
+    backgroundColor: COLORS.primaryDark
+  },
+  actionButtonOffline: {
+    backgroundColor: COLORS.backgroundSecondary,
+    borderWidth: 1.5,
+    borderColor: COLORS.border
+  },
+  actionButtonText: {
+    fontSize: 14.5,
+    fontWeight: '800'
+  },
+  actionButtonTextOnline: {
+    color: COLORS.textLight
+  },
+  actionButtonTextOffline: {
     color: COLORS.textPrimary
   },
-  statLabel: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-    fontWeight: '500',
-    marginTop: 2
-  },
-  toggleButton: {
-    marginTop: 4
+  buttonDisabled: {
+    opacity: 0.6
   }
 });

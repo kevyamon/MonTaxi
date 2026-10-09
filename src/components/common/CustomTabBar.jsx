@@ -9,7 +9,7 @@ export const CustomTabBar = ({ state, descriptors, navigation, unreadNotificatio
 
   const icons = {
     History: { active: 'time', inactive: 'time-outline', label: 'Historique' },
-    Notifications: { active: 'notifications', inactive: 'notifications-outline', label: 'Notifications' },
+    Notifications: { active: 'notifications', inactive: 'notifications-outline', label: 'Notifs' },
     Home: { active: 'home', inactive: 'home-outline', label: 'Accueil' },
     Help: { active: 'help-circle', inactive: 'help-circle-outline', label: 'Aide' },
     Settings: { active: 'settings', inactive: 'settings-outline', label: 'Réglages' }
@@ -61,7 +61,7 @@ export const CustomTabBar = ({ state, descriptors, navigation, unreadNotificatio
                     color={COLORS.textLight}
                   />
                 </Pressable>
-                <Text style={[styles.tabLabel, isFocused && styles.tabLabelActive]}>
+                <Text style={[styles.tabLabel, isFocused && styles.tabLabelActive]} numberOfLines={1}>
                   {iconInfo.label}
                 </Text>
               </View>
@@ -93,6 +93,7 @@ export const CustomTabBar = ({ state, descriptors, navigation, unreadNotificatio
                   styles.tabLabel,
                   isFocused ? styles.tabLabelActive : styles.tabLabelInactive
                 ]}
+                numberOfLines={1}
               >
                 {iconInfo.label}
               </Text>

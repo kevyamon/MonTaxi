@@ -71,15 +71,14 @@ export const HomeScreen = ({ navigation }) => {
         setZoneId(evalResult.zoneId || 'bonoua');
         setLocationAddress(evalResult.address);
       } else {
-        // Fallback Bonoua
-        const defaultEval = await evaluateLocation(5.2719, -3.5956);
-        setCoords({ latitude: 5.2719, longitude: -3.5956 });
-        setIsInCoverage(defaultEval.isInCoverage);
-        setZoneId('bonoua');
-        setLocationAddress(defaultEval.address);
+        // Position introuvable ou connexion indisponible : verrouillage hors zone
+        setIsInCoverage(false);
+        setLocationAddress('Position non trouvée, veuillez actualiser');
       }
     } catch (err) {
       console.warn('[HomeScreen] Erreur chargement position :', err);
+      setIsInCoverage(false);
+      setLocationAddress('Position non trouvée, veuillez actualiser');
     } finally {
       setLocationLoading(false);
     }
@@ -183,6 +182,8 @@ export const HomeScreen = ({ navigation }) => {
         user={user}
         onProfilePress={() => navigation.navigate('Settings')}
         showLocationPin={true}
+        isDriver={isDriver}
+        isOnline={isOnline}
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>

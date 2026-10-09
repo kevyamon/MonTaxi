@@ -12,7 +12,7 @@ export const BookingBottomSheet = ({
   visible,
   onClose,
   onConfirmOrder,
-  pickupAddress = 'Position actuelle',
+  pickupAddress = 'Position non trouvée, veuillez actualiser',
   pickupCoords = { latitude: 5.2719, longitude: -3.5956 },
   zoneId = null,
   loading = false

@@ -9,7 +9,9 @@ export const HeaderCurved = ({
   subtitle,
   user,
   onProfilePress,
-  showLocationPin = false
+  showLocationPin = false,
+  isDriver = false,
+  isOnline = false
 }) => {
   const insets = useSafeAreaInsets();
   const initial = user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'M';
@@ -31,9 +33,20 @@ export const HeaderCurved = ({
               />
             )}
             <Text style={styles.addressSubtitle} numberOfLines={1} ellipsizeMode="tail">
-              {subtitle || 'Position actuelle'}
+              {subtitle || 'Position non trouvée, veuillez actualiser'}
             </Text>
           </View>
+
+          {isDriver && (
+            <View style={styles.driverStatusWrapper}>
+              <View style={[styles.statusTagBlack, isOnline ? styles.statusTagOnline : styles.statusTagOffline]}>
+                <View style={[styles.statusDotSmall, { backgroundColor: isOnline ? '#10B981' : '#EF4444' }]} />
+                <Text style={[styles.statusTagText, { color: isOnline ? '#10B981' : '#EF4444' }]}>
+                  {isOnline ? 'EN LIGNE' : 'HORS LIGNE'}
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
 
         <Pressable
@@ -94,6 +107,38 @@ const styles = StyleSheet.create({
     opacity: 0.85,
     fontWeight: '600',
     flexShrink: 1
+  },
+  driverStatusWrapper: {
+    marginTop: 6,
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  statusTagBlack: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#000000',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 6,
+    borderWidth: 1,
+    ...SHADOWS.small
+  },
+  statusTagOnline: {
+    borderColor: 'rgba(16, 185, 129, 0.4)'
+  },
+  statusTagOffline: {
+    borderColor: 'rgba(239, 68, 68, 0.4)'
+  },
+  statusDotSmall: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5
+  },
+  statusTagText: {
+    fontSize: 10.5,
+    fontWeight: '900',
+    letterSpacing: 0.6
   },
   avatarButton: {
     width: 46,

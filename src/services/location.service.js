@@ -46,7 +46,7 @@ export const getReadableAddress = async (latitude, longitude) => {
   if (coverage.isInCoverage && coverage.currentZone) {
     return `${coverage.currentZone.name}, Centre`;
   }
-  return 'Position actuelle';
+  return 'Position non trouvée, veuillez actualiser';
 };
 
 /**
