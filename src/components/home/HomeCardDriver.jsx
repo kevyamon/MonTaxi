@@ -1,17 +1,32 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import React, { useRef } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { Video, ResizeMode } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOWS } from '../../theme/colors';
 import { PrimaryButton } from '../common/PrimaryButton';
 
+let hasPlayedDriverVideoSession = false;
+
 export const HomeCardDriver = ({ isOnline, onToggleStatus, loading, totalRides = 0 }) => {
+  const videoRef = useRef(null);
+
   return (
     <View style={styles.cardContainer}>
       <View style={styles.imageWrapper}>
-        <Image
-          source={require('../../../assets/images/taxi_3d.jpg')}
-          style={styles.taxiImage}
-          resizeMode="cover"
+        <Video
+          ref={videoRef}
+          source={require('../../../assets/homevid.mp4')}
+          style={styles.taxiVideo}
+          resizeMode={ResizeMode.COVER}
+          shouldPlay={!hasPlayedDriverVideoSession}
+          isLooping={false}
+          isMuted={true}
+          useNativeControls={false}
+          onPlaybackStatusUpdate={(status) => {
+            if (status.isLoaded && status.didJustFinish) {
+              hasPlayedDriverVideoSession = true;
+            }
+          }}
         />
         <View style={[styles.statusBadge, isOnline ? styles.onlineBadge : styles.offlineBadge]}>
           <View style={[styles.statusDot, isOnline ? styles.onlineDot : styles.offlineDot]} />
@@ -74,9 +89,10 @@ const styles = StyleSheet.create({
     height: 190,
     width: '100%',
     backgroundColor: COLORS.backgroundSecondary,
-    position: 'relative'
+    position: 'relative',
+    overflow: 'hidden'
   },
-  taxiImage: {
+  taxiVideo: {
     width: '100%',
     height: '100%'
   },

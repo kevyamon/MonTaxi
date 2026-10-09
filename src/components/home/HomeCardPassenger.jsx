@@ -1,8 +1,12 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Image, Animated } from 'react-native';
+import { View, Text, StyleSheet, Animated } from 'react-native';
+import { Video, ResizeMode } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOWS } from '../../theme/colors';
 import { PrimaryButton } from '../common/PrimaryButton';
+
+// Flag de session pour jouer la vidéo une seule fois par ouverture de l'application
+let hasPlayedPassengerVideoSession = false;
 
 export const HomeCardPassenger = ({
   onOrderPress,
@@ -10,44 +14,17 @@ export const HomeCardPassenger = ({
   onRefreshLocation,
   locationLoading = false
 }) => {
-  const floatAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const videoRef = useRef(null);
 
   useEffect(() => {
-    // Fondu d'entrée doux
+    // Fondu d'entrée doux de la carte
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 500,
       useNativeDriver: true
     }).start();
-
-    // Micro-animation flottante de l'illustration
-    const floatLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(floatAnim, {
-          toValue: -5,
-          duration: 1800,
-          useNativeDriver: true
-        }),
-        Animated.timing(floatAnim, {
-          toValue: 0,
-          duration: 1800,
-          useNativeDriver: true
-        })
-      ])
-    );
-    floatLoop.start();
-
-    // Arrêt automatique de l'animation après 60 secondes
-    const timer = setTimeout(() => {
-      floatLoop.stop();
-    }, 60000);
-
-    return () => {
-      clearTimeout(timer);
-      floatLoop.stop();
-    };
-  }, [fadeAnim, floatAnim]);
+  }, [fadeAnim]);
 
   if (!isInCoverage) {
     return (
@@ -76,10 +53,20 @@ export const HomeCardPassenger = ({
   return (
     <Animated.View style={[styles.cardContainer, { opacity: fadeAnim }]}>
       <View style={styles.imageWrapper}>
-        <Animated.Image
-          source={require('../../../assets/images/taxi_3d.jpg')}
-          style={[styles.taxiImage, { transform: [{ translateY: floatAnim }] }]}
-          resizeMode="cover"
+        <Video
+          ref={videoRef}
+          source={require('../../../assets/homevid.mp4')}
+          style={styles.taxiVideo}
+          resizeMode={ResizeMode.COVER}
+          shouldPlay={!hasPlayedPassengerVideoSession}
+          isLooping={false}
+          isMuted={true}
+          useNativeControls={false}
+          onPlaybackStatusUpdate={(status) => {
+            if (status.isLoaded && status.didJustFinish) {
+              hasPlayedPassengerVideoSession = true;
+            }
+          }}
         />
         <View style={styles.badgePromo}>
           <Ionicons name="flash" size={14} color={COLORS.textPrimary} />
@@ -152,9 +139,10 @@ const styles = StyleSheet.create({
     height: 200,
     width: '100%',
     backgroundColor: COLORS.backgroundSecondary,
-    position: 'relative'
+    position: 'relative',
+    overflow: 'hidden'
   },
-  taxiImage: {
+  taxiVideo: {
     width: '100%',
     height: '100%'
   },
