@@ -9,7 +9,7 @@ export const CustomTabBar = ({ state, descriptors, navigation, unreadNotificatio
 
   const icons = {
     History: { active: 'time', inactive: 'time-outline', label: 'Historique' },
-    Notifications: { active: 'notifications', inactive: 'notifications-outline', label: 'Alertes' },
+    Notifications: { active: 'notifications', inactive: 'notifications-outline', label: 'Notifications' },
     Home: { active: 'home', inactive: 'home-outline', label: 'Accueil' },
     Help: { active: 'help-circle', inactive: 'help-circle-outline', label: 'Aide' },
     Settings: { active: 'settings', inactive: 'settings-outline', label: 'Réglages' }

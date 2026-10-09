@@ -11,8 +11,8 @@ export const rideApi = {
     return response.data;
   },
 
-  getRideHistory: async (page = 1, limit = 15) => {
-    const response = await apiClient.get(`/rides/history?page=${page}&limit=${limit}`);
+  getRideHistory: async (page = 1, limit = 15, archived = false) => {
+    const response = await apiClient.get(`/rides/history?page=${page}&limit=${limit}&archived=${archived}`);
     return response.data;
   },
 
@@ -53,6 +53,11 @@ export const rideApi = {
 
   archiveRide: async (id) => {
     const response = await apiClient.patch(`/rides/${id}/archive`);
+    return response.data;
+  },
+
+  unarchiveRide: async (id) => {
+    const response = await apiClient.patch(`/rides/${id}/unarchive`);
     return response.data;
   }
 };

@@ -13,6 +13,7 @@ export const TabNavigator = () => {
   return (
     <Tab.Navigator
       tabBar={(props) => <CustomTabBar {...props} />}
+      backBehavior="history"
       screenOptions={{
         headerShown: false
       }}

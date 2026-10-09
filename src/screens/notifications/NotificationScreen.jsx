@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOWS } from '../../theme/colors';
@@ -11,14 +11,15 @@ import { userApi } from '../../api/user.api';
 export const NotificationScreen = ({ navigation }) => {
   const { user } = useAuth();
   const { socket } = useSocket();
+  const [tab, setTab] = useState('active'); // 'active' | 'archived'
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedNotif, setSelectedNotif] = useState(null);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async (isArchivedTab = tab === 'archived') => {
     try {
-      const res = await userApi.getNotifications();
+      const res = await userApi.getNotifications(1, 20, isArchivedTab);
       if (res.success && res.data) {
         setNotifications(res.data.notifications);
       }
@@ -28,29 +29,30 @@ export const NotificationScreen = ({ navigation }) => {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [tab]);
 
   useEffect(() => {
-    fetchNotifications();
-  }, []);
+    setLoading(true);
+    fetchNotifications(tab === 'archived');
+  }, [tab, fetchNotifications]);
 
   // Écoute Socket.IO en temps réel pour les notifications
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || tab === 'archived') return;
 
-    socket.on('notification:new', (newNotif) => {
+    const onNewNotif = (newNotif) => {
       setNotifications((prev) => [newNotif, ...prev]);
-    });
+    };
+    const onRideUpdate = () => fetchNotifications(false);
 
-    socket.on('ride:update', () => {
-      fetchNotifications();
-    });
+    socket.on('notification:new', onNewNotif);
+    socket.on('ride:update', onRideUpdate);
 
     return () => {
-      socket.off('notification:new');
-      socket.off('ride:update');
+      socket.off('notification:new', onNewNotif);
+      socket.off('ride:update', onRideUpdate);
     };
-  }, [socket]);
+  }, [socket, tab, fetchNotifications]);
 
   const handleMarkAllRead = async () => {
     try {
@@ -89,6 +91,21 @@ export const NotificationScreen = ({ navigation }) => {
     }
   };
 
+  const handleUnarchiveNotif = async () => {
+    if (!selectedNotif) return;
+    const notifId = selectedNotif._id;
+    const prev = [...notifications];
+    setNotifications((list) => list.filter((n) => n._id !== notifId));
+    setSelectedNotif(null);
+
+    try {
+      await userApi.unarchiveNotification(notifId);
+    } catch (e) {
+      console.warn('[NotificationScreen] Erreur désarchivage notif :', e);
+      setNotifications(prev);
+    }
+  };
+
   const renderItem = ({ item }) => {
     return (
       <Pressable
@@ -123,16 +140,31 @@ export const NotificationScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <HeaderCurved
-        title="Alertes"
+        title="Notifications"
         subtitle="Vos notifications en direct"
         user={user}
         onProfilePress={() => navigation.navigate('Settings')}
         showLocationPin={false}
       />
 
+      <View style={styles.segmentContainer}>
+        <Pressable
+          style={[styles.segmentBtn, tab === 'active' && styles.segmentBtnActive]}
+          onPress={() => setTab('active')}
+        >
+          <Text style={[styles.segmentText, tab === 'active' && styles.segmentTextActive]}>Actives</Text>
+        </Pressable>
+        <Pressable
+          style={[styles.segmentBtn, tab === 'archived' && styles.segmentBtnActive]}
+          onPress={() => setTab('archived')}
+        >
+          <Text style={[styles.segmentText, tab === 'archived' && styles.segmentTextActive]}>Archivées</Text>
+        </Pressable>
+      </View>
+
       <View style={styles.actionsBar}>
-        <Text style={styles.countText}>{notifications.length} notifications</Text>
-        {notifications.length > 0 && (
+        <Text style={styles.countText}>{notifications.length} notification(s)</Text>
+        {tab === 'active' && notifications.length > 0 && (
           <Pressable onPress={handleMarkAllRead}>
             <Text style={styles.markReadText}>Tout marquer comme lu</Text>
           </Pressable>
@@ -145,9 +177,17 @@ export const NotificationScreen = ({ navigation }) => {
         </View>
       ) : notifications.length === 0 ? (
         <View style={styles.centerContainer}>
-          <Ionicons name="notifications-off-outline" size={48} color={COLORS.textMuted} />
-          <Text style={styles.emptyTitle}>Aucune notification</Text>
-          <Text style={styles.emptySubtitle}>Vous êtes à jour !</Text>
+          <Ionicons
+            name={tab === 'archived' ? 'archive-outline' : 'notifications-off-outline'}
+            size={48}
+            color={COLORS.textMuted}
+          />
+          <Text style={styles.emptyTitle}>
+            {tab === 'archived' ? 'Aucune notification archivée' : 'Aucune notification'}
+          </Text>
+          <Text style={styles.emptySubtitle}>
+            {tab === 'archived' ? 'Vos notifications archivées apparaîtront ici.' : 'Vous êtes à jour !'}
+          </Text>
         </View>
       ) : (
         <FlatList
@@ -155,16 +195,17 @@ export const NotificationScreen = ({ navigation }) => {
           keyExtractor={(item) => item._id}
           renderItem={renderItem}
           contentContainerStyle={styles.listContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={fetchNotifications} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => fetchNotifications()} />}
         />
       )}
 
       <ItemActionModal
         visible={!!selectedNotif}
-        title="Gérer l’alerte"
+        title="Gérer la notification"
         onClose={() => setSelectedNotif(null)}
         onDelete={handleDeleteNotif}
-        onArchive={handleArchiveNotif}
+        onArchive={tab === 'active' ? handleArchiveNotif : undefined}
+        onUnarchive={tab === 'archived' ? handleUnarchiveNotif : undefined}
       />
     </View>
   );
@@ -172,12 +213,27 @@ export const NotificationScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
+  segmentContainer: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.backgroundSecondary,
+    marginHorizontal: 20,
+    marginTop: 10,
+    marginBottom: 4,
+    borderRadius: 14,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: COLORS.border
+  },
+  segmentBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 10 },
+  segmentBtnActive: { backgroundColor: COLORS.card, ...SHADOWS.small },
+  segmentText: { fontSize: 13, fontWeight: '600', color: COLORS.textMuted },
+  segmentTextActive: { color: COLORS.primaryDark, fontWeight: '800' },
   actionsBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 12
+    paddingVertical: 10
   },
   countText: { fontSize: 13, color: COLORS.textMuted, fontWeight: '600' },
   markReadText: { fontSize: 13, fontWeight: '700', color: COLORS.primaryDark },
@@ -197,15 +253,7 @@ const styles = StyleSheet.create({
   },
   cardPressed: { opacity: 0.85 },
   unreadCard: { borderColor: COLORS.primary, backgroundColor: COLORS.primaryLight },
-  iconBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: COLORS.backgroundSecondary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12
-  },
+  iconBox: { width: 38, height: 38, borderRadius: 19, backgroundColor: COLORS.backgroundSecondary, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   contentBox: { flex: 1 },
   title: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
   message: { fontSize: 12, color: COLORS.textSecondary, marginTop: 3, lineHeight: 16 },

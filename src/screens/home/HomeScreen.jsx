@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, BackHandler } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '../../theme/colors';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
@@ -13,6 +14,7 @@ import { CustomAlertModal } from '../../components/common/CustomAlertModal';
 import { getCurrentPosition, evaluateLocation } from '../../services/location.service';
 import { rideApi } from '../../api/ride.api';
 import { driverApi } from '../../api/driver.api';
+import { getApiErrorMessage } from '../../api/client';
 
 export const HomeScreen = ({ navigation }) => {
   const { user, isDriver, updateUser } = useAuth();
@@ -23,32 +25,40 @@ export const HomeScreen = ({ navigation }) => {
   const [locationAddress, setLocationAddress] = useState('Recherche de votre position...');
   const [isInCoverage, setIsInCoverage] = useState(true);
   const [locationLoading, setLocationLoading] = useState(false);
-
   const [zoneId, setZoneId] = useState('bonoua');
   const [showBookingSheet, setShowBookingSheet] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchStatus, setSearchStatus] = useState('Recherche d’un chauffeur proche...');
   const [activeRide, setActiveRide] = useState(null);
   const [orderLoading, setOrderLoading] = useState(false);
-
-  // Flux Chauffeur
   const [isOnline, setIsOnline] = useState(user?.driverInfo?.isOnline || false);
   const [statusLoading, setStatusLoading] = useState(false);
 
   const [alertConfig, setAlertConfig] = useState({
-    visible: false,
-    type: 'info',
-    title: '',
-    message: ''
+    visible: false, type: 'info', title: '', message: '',
+    buttonText: 'D’accord', secondaryText: null, onPrimary: null, onSecondary: null
   });
 
   const showAlert = (type, title, message) => {
-    setAlertConfig({ visible: true, type, title, message });
+    setAlertConfig({ visible: true, type, title, message, buttonText: 'D’accord', secondaryText: null, onPrimary: null, onSecondary: null });
   };
+  const closeAlert = () => setAlertConfig((prev) => ({ ...prev, visible: false }));
 
-  const closeAlert = () => {
-    setAlertConfig((prev) => ({ ...prev, visible: false }));
-  };
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        setAlertConfig({
+          visible: true, type: 'warning', title: 'Quitter MonTaxi ?',
+          message: 'Êtes-vous sûr de vouloir fermer l’application ?',
+          buttonText: 'Quitter', secondaryText: 'Annuler',
+          onPrimary: () => BackHandler.exitApp(), onSecondary: closeAlert
+        });
+        return true;
+      };
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [])
+  );
 
   const refreshLocation = useCallback(async () => {
     try {
@@ -81,25 +91,12 @@ export const HomeScreen = ({ navigation }) => {
 
   useEffect(() => {
     if (!socket) return;
-
     socket.on('ride:search:progress', (data) => setSearchStatus(data.message));
-    socket.on('ride:search:timeout', (data) => {
-      setIsSearching(false);
-      showAlert('warning', 'Recherche terminée', data.message);
-    });
-    socket.on('ride:accepted', (data) => {
-      setIsSearching(false);
-      setActiveRide(data.ride);
-    });
-    socket.on('ride:driver_arrived', () => {
-      setActiveRide((prev) => (prev ? { ...prev, status: 'driver_arriving' } : null));
-    });
-    socket.on('ride:started', () => {
-      setActiveRide((prev) => (prev ? { ...prev, status: 'in_progress' } : null));
-    });
-    socket.on('ride:completed', (data) => {
-      setActiveRide((prev) => (prev ? { ...prev, status: 'completed', fare: data.fare } : null));
-    });
+    socket.on('ride:search:timeout', (data) => { setIsSearching(false); showAlert('warning', 'Recherche terminée', data.message); });
+    socket.on('ride:accepted', (data) => { setIsSearching(false); setActiveRide(data.ride); });
+    socket.on('ride:driver_arrived', () => setActiveRide((prev) => (prev ? { ...prev, status: 'driver_arriving' } : null)));
+    socket.on('ride:started', () => setActiveRide((prev) => (prev ? { ...prev, status: 'in_progress' } : null)));
+    socket.on('ride:completed', (data) => setActiveRide((prev) => (prev ? { ...prev, status: 'completed', fare: data.fare } : null)));
 
     return () => {
       socket.off('ride:search:progress');
@@ -145,7 +142,7 @@ export const HomeScreen = ({ navigation }) => {
       }
     } catch (error) {
       setIsSearching(false);
-      showAlert('error', 'Erreur de commande', error.message || 'Impossible d’initier la course.');
+      showAlert('error', 'Erreur de commande', getApiErrorMessage(error));
     } finally {
       setOrderLoading(false);
     }
@@ -161,7 +158,7 @@ export const HomeScreen = ({ navigation }) => {
         updateUser({ driverInfo: { ...user?.driverInfo, isOnline: newStatus } });
       }
     } catch (err) {
-      showAlert('error', 'Erreur', err.message || 'Impossible de mettre à jour votre statut.');
+      showAlert('error', 'Erreur', getApiErrorMessage(err));
     } finally {
       setStatusLoading(false);
     }
@@ -174,7 +171,7 @@ export const HomeScreen = ({ navigation }) => {
       if (actionType === 'start') await rideApi.startRide(activeRide._id);
       if (actionType === 'complete') await rideApi.completeRide(activeRide._id);
     } catch (err) {
-      showAlert('error', 'Erreur', err.message || 'Opération impossible.');
+      showAlert('error', 'Erreur', getApiErrorMessage(err));
     }
   };
 
@@ -238,6 +235,10 @@ export const HomeScreen = ({ navigation }) => {
         type={alertConfig.type}
         title={alertConfig.title}
         message={alertConfig.message}
+        buttonText={alertConfig.buttonText}
+        onPrimaryPress={alertConfig.onPrimary}
+        secondaryButtonText={alertConfig.secondaryText}
+        onSecondaryPress={alertConfig.onSecondary}
         onClose={closeAlert}
       />
     </View>

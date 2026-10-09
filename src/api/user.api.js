@@ -16,8 +16,8 @@ export const userApi = {
     return response.data;
   },
 
-  getNotifications: async (page = 1, limit = 20) => {
-    const response = await apiClient.get(`/users/notifications?page=${page}&limit=${limit}`);
+  getNotifications: async (page = 1, limit = 20, archived = false) => {
+    const response = await apiClient.get(`/users/notifications?page=${page}&limit=${limit}&archived=${archived}`);
     return response.data;
   },
 
@@ -33,6 +33,11 @@ export const userApi = {
 
   archiveNotification: async (id) => {
     const response = await apiClient.patch(`/users/notifications/${id}/archive`);
+    return response.data;
+  },
+
+  unarchiveNotification: async (id) => {
+    const response = await apiClient.patch(`/users/notifications/${id}/unarchive`);
     return response.data;
   }
 };

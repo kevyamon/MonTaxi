@@ -8,7 +8,8 @@ export const ItemActionModal = ({
   title = 'Options de l’élément',
   onClose,
   onDelete,
-  onArchive
+  onArchive,
+  onUnarchive
 }) => {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -22,6 +23,21 @@ export const ItemActionModal = ({
           </View>
 
           <View style={styles.actionsList}>
+            {onUnarchive && (
+              <Pressable
+                style={({ pressed }) => [styles.actionRow, pressed && styles.actionPressed]}
+                onPress={() => {
+                  onClose();
+                  onUnarchive();
+                }}
+              >
+                <View style={[styles.iconBox, { backgroundColor: COLORS.primaryLight }]}>
+                  <Ionicons name="arrow-undo-outline" size={20} color={COLORS.primaryDark} />
+                </View>
+                <Text style={styles.actionText}>Désarchiver</Text>
+              </Pressable>
+            )}
+
             {onArchive && (
               <Pressable
                 style={({ pressed }) => [styles.actionRow, pressed && styles.actionPressed]}

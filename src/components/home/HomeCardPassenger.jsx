@@ -59,10 +59,12 @@ export const HomeCardPassenger = ({
           style={styles.taxiVideo}
           resizeMode={ResizeMode.COVER}
           shouldPlay={!hasPlayedPassengerVideoSession}
-          positionMillis={hasPlayedPassengerVideoSession ? 0 : undefined}
           isLooping={false}
           isMuted={true}
           useNativeControls={false}
+          usePoster={true}
+          posterSource={require('../../../assets/logo.png')}
+          posterStyle={{ resizeMode: 'cover' }}
           onPlaybackStatusUpdate={(status) => {
             if (status.isLoaded && status.didJustFinish) {
               hasPlayedPassengerVideoSession = true;

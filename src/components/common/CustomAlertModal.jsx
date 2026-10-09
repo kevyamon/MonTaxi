@@ -41,6 +41,7 @@ export const CustomAlertModal = ({
   message,
   buttonText = 'D’accord',
   onClose,
+  onPrimaryPress,
   secondaryButtonText,
   onSecondaryPress
 }) => {
@@ -77,7 +78,7 @@ export const CustomAlertModal = ({
 
             <Pressable
               style={[styles.button, styles.primaryButton, { backgroundColor: config.buttonColor }]}
-              onPress={onClose}
+              onPress={onPrimaryPress || onClose}
             >
               <Text style={styles.primaryButtonText}>{buttonText}</Text>
             </Pressable>

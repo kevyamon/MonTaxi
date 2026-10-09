@@ -19,10 +19,12 @@ export const HomeCardDriver = ({ isOnline, onToggleStatus, loading, totalRides =
           style={styles.taxiVideo}
           resizeMode={ResizeMode.COVER}
           shouldPlay={!hasPlayedDriverVideoSession}
-          positionMillis={hasPlayedDriverVideoSession ? 0 : undefined}
           isLooping={false}
           isMuted={true}
           useNativeControls={false}
+          usePoster={true}
+          posterSource={require('../../../assets/logo.png')}
+          posterStyle={{ resizeMode: 'cover' }}
           onPlaybackStatusUpdate={(status) => {
             if (status.isLoaded && status.didJustFinish) {
               hasPlayedDriverVideoSession = true;
