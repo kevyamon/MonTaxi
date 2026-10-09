@@ -1,8 +1,13 @@
 import apiClient from './client';
 
 export const driverApi = {
-  updateStatus: async (isOnline) => {
-    const response = await apiClient.patch('/drivers/status', { isOnline });
+  updateStatus: async (isOnline, coords = null) => {
+    const payload = { isOnline };
+    if (coords && typeof coords.latitude === 'number' && typeof coords.longitude === 'number') {
+      payload.latitude = coords.latitude;
+      payload.longitude = coords.longitude;
+    }
+    const response = await apiClient.patch('/drivers/status', payload);
     return response.data;
   },
 

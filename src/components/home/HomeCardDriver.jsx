@@ -2,8 +2,17 @@ import React, { useRef } from 'react';
 import { View, Text, StyleSheet, Image, Animated, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOWS } from '../../theme/colors';
+import { PrimaryButton } from '../common/PrimaryButton';
 
-export const HomeCardDriver = ({ isOnline, onToggleStatus, loading, totalRides = 0 }) => {
+export const HomeCardDriver = ({
+  isOnline,
+  onToggleStatus,
+  loading,
+  totalRides = 0,
+  isInCoverage = true,
+  onRefreshLocation,
+  locationLoading = false
+}) => {
   const buttonScale = useRef(new Animated.Value(1)).current;
 
   const handlePress = () => {
@@ -22,6 +31,30 @@ export const HomeCardDriver = ({ isOnline, onToggleStatus, loading, totalRides =
     ]).start();
     onToggleStatus();
   };
+
+  if (!isInCoverage) {
+    return (
+      <View style={[styles.cardContainer, styles.outOfZoneCard]}>
+        <View style={styles.outOfZoneHeader}>
+          <View style={styles.dangerIconBadge}>
+            <Ionicons name="warning-outline" size={32} color={COLORS.danger} />
+          </View>
+          <Text style={styles.outOfZoneTitle}>Hors de la zone d’activité</Text>
+          <Text style={styles.outOfZoneDescription}>
+            Votre position se situe en dehors des villes desservies par MonTaxi (Bonoua, Aboisso, Adiaké). Vous ne pouvez pas passer en ligne ni recevoir de courses.
+          </Text>
+        </View>
+
+        <PrimaryButton
+          title={locationLoading ? 'Actualisation...' : 'Actualiser ma position'}
+          onPress={onRefreshLocation}
+          loading={locationLoading}
+          icon={!locationLoading ? <Ionicons name="refresh-outline" size={18} color={COLORS.textLight} /> : null}
+          style={styles.refreshButton}
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.cardContainer}>
@@ -59,11 +92,11 @@ export const HomeCardDriver = ({ isOnline, onToggleStatus, loading, totalRides =
 
           <View style={styles.immersiveStatCard}>
             <View style={styles.statHeader}>
-              <View style={[styles.statIconBox, { backgroundColor: '#FEF3C7' }]}>
-                <Ionicons name="shield-checkmark-outline" size={16} color="#D97706" />
+              <View style={[styles.statIconBox, { backgroundColor: COLORS.warningLight }]}>
+                <Ionicons name="shield-checkmark-outline" size={16} color={COLORS.warning} />
               </View>
-              <View style={[styles.statusPill, { backgroundColor: '#FEF3C7' }]}>
-                <Text style={[styles.statusPillText, { color: '#B45309' }]}>5.0 / 5</Text>
+              <View style={[styles.statusPill, { backgroundColor: COLORS.warningLight }]}>
+                <Text style={[styles.statusPillText, { color: COLORS.warning }]}>5.0 / 5</Text>
               </View>
             </View>
             <Text style={styles.immersiveStatValue}>5.0</Text>
@@ -109,6 +142,41 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     overflow: 'hidden',
     ...SHADOWS.medium
+  },
+  outOfZoneCard: {
+    padding: 24,
+    borderColor: COLORS.dangerLight,
+    backgroundColor: COLORS.card
+  },
+  outOfZoneHeader: {
+    alignItems: 'center',
+    marginBottom: 20
+  },
+  dangerIconBadge: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: COLORS.dangerLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16
+  },
+  outOfZoneTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    textAlign: 'center',
+    marginBottom: 8,
+    letterSpacing: -0.3
+  },
+  outOfZoneDescription: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: COLORS.textSecondary,
+    textAlign: 'center'
+  },
+  refreshButton: {
+    marginTop: 8
   },
   imageWrapper: {
     height: 130,

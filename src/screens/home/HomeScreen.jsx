@@ -148,10 +148,19 @@ export const HomeScreen = ({ navigation }) => {
   };
 
   const handleToggleOnline = async () => {
+    const newStatus = !isOnline;
+    if (newStatus && !isInCoverage) {
+      showAlert(
+        'warning',
+        'Zone non couverte',
+        'Vous devez être situé dans l’une des zones d’activité de MonTaxi (Bonoua, Aboisso, Adiaké) pour passer en ligne.'
+      );
+      return;
+    }
+
     try {
       setStatusLoading(true);
-      const newStatus = !isOnline;
-      const res = await driverApi.updateStatus(newStatus);
+      const res = await driverApi.updateStatus(newStatus, coords);
       if (res.success) {
         setIsOnline(newStatus);
         updateUser({ driverInfo: { ...user?.driverInfo, isOnline: newStatus } });
@@ -200,6 +209,9 @@ export const HomeScreen = ({ navigation }) => {
             onToggleStatus={handleToggleOnline}
             loading={statusLoading}
             totalRides={user?.driverInfo?.totalRides || 0}
+            isInCoverage={isInCoverage}
+            onRefreshLocation={refreshLocation}
+            locationLoading={locationLoading}
           />
         ) : (
           <HomeCardPassenger
@@ -247,12 +259,6 @@ export const HomeScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 130
-  }
+  container: { flex: 1, backgroundColor: COLORS.background },
+  scrollContent: { padding: 20, paddingBottom: 130 }
 });
