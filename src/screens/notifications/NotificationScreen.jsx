@@ -3,14 +3,18 @@ import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable, Refresh
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOWS } from '../../theme/colors';
 import { HeaderCurved } from '../../components/common/HeaderCurved';
+import { ItemActionModal } from '../../components/common/ItemActionModal';
 import { useAuth } from '../../context/AuthContext';
+import { useSocket } from '../../context/SocketContext';
 import { userApi } from '../../api/user.api';
 
 export const NotificationScreen = ({ navigation }) => {
   const { user } = useAuth();
+  const { socket } = useSocket();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedNotif, setSelectedNotif] = useState(null);
 
   const fetchNotifications = async () => {
     try {
@@ -19,7 +23,7 @@ export const NotificationScreen = ({ navigation }) => {
         setNotifications(res.data.notifications);
       }
     } catch (e) {
-      console.error('[NotificationScreen] Erreur :', e);
+      console.warn('[NotificationScreen] Erreur :', e);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -30,6 +34,24 @@ export const NotificationScreen = ({ navigation }) => {
     fetchNotifications();
   }, []);
 
+  // Écoute Socket.IO en temps réel pour les notifications
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on('notification:new', (newNotif) => {
+      setNotifications((prev) => [newNotif, ...prev]);
+    });
+
+    socket.on('ride:update', () => {
+      fetchNotifications();
+    });
+
+    return () => {
+      socket.off('notification:new');
+      socket.off('ride:update');
+    };
+  }, [socket]);
+
   const handleMarkAllRead = async () => {
     try {
       await userApi.markAllNotificationsAsRead();
@@ -37,16 +59,35 @@ export const NotificationScreen = ({ navigation }) => {
     } catch (e) {}
   };
 
-  const handleDelete = async (id) => {
-    try {
-      await userApi.deleteNotification(id);
-      setNotifications((prev) => prev.filter((n) => n._id !== id));
-    } catch (e) {}
+  const handleDeleteNotif = async () => {
+    if (selectedNotif) {
+      try {
+        await userApi.deleteNotification(selectedNotif._id);
+        setNotifications((prev) => prev.filter((n) => n._id !== selectedNotif._id));
+      } catch (e) {}
+      setSelectedNotif(null);
+    }
+  };
+
+  const handleArchiveNotif = () => {
+    if (selectedNotif) {
+      setNotifications((prev) =>
+        prev.map((n) => (n._id === selectedNotif._id ? { ...n, isRead: true } : n))
+      );
+      setSelectedNotif(null);
+    }
   };
 
   const renderItem = ({ item }) => {
     return (
-      <View style={[styles.card, !item.isRead && styles.unreadCard]}>
+      <Pressable
+        style={({ pressed }) => [
+          styles.card,
+          !item.isRead && styles.unreadCard,
+          pressed && styles.cardPressed
+        ]}
+        onLongPress={() => setSelectedNotif(item)}
+      >
         <View style={styles.iconBox}>
           <Ionicons
             name={item.type === 'ride_update' ? 'car-sport' : 'notifications'}
@@ -64,20 +105,18 @@ export const NotificationScreen = ({ navigation }) => {
             })}
           </Text>
         </View>
-        <Pressable onPress={() => handleDelete(item._id)} style={styles.deleteBtn}>
-          <Ionicons name="trash-outline" size={18} color={COLORS.textMuted} />
-        </Pressable>
-      </View>
+      </Pressable>
     );
   };
 
   return (
     <View style={styles.container}>
       <HeaderCurved
-        title="Notifications"
-        subtitle="Vos alertes de courses"
+        title="Alertes"
+        subtitle="Vos notifications en direct"
         user={user}
         onProfilePress={() => navigation.navigate('Settings')}
+        showLocationPin={false}
       />
 
       <View style={styles.actionsBar}>
@@ -108,15 +147,20 @@ export const NotificationScreen = ({ navigation }) => {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={fetchNotifications} />}
         />
       )}
+
+      <ItemActionModal
+        visible={!!selectedNotif}
+        title="Gérer l’alerte"
+        onClose={() => setSelectedNotif(null)}
+        onDelete={handleDeleteNotif}
+        onArchive={handleArchiveNotif}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
   actionsBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -124,38 +168,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12
   },
-  countText: {
-    fontSize: 13,
-    color: COLORS.textMuted,
-    fontWeight: '600'
-  },
-  markReadText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.primaryDark
-  },
-  centerContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginTop: 12
-  },
-  emptySubtitle: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    marginTop: 4
-  },
-  listContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-    gap: 12
-  },
+  countText: { fontSize: 13, color: COLORS.textMuted, fontWeight: '600' },
+  markReadText: { fontSize: 13, fontWeight: '700', color: COLORS.primaryDark },
+  centerContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: COLORS.textPrimary, marginTop: 12 },
+  emptySubtitle: { fontSize: 13, color: COLORS.textSecondary, marginTop: 4 },
+  listContent: { paddingHorizontal: 20, paddingBottom: 90, gap: 12 },
   card: {
     flexDirection: 'row',
     backgroundColor: COLORS.card,
@@ -166,10 +184,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     ...SHADOWS.small
   },
-  unreadCard: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primaryLight
-  },
+  cardPressed: { opacity: 0.85 },
+  unreadCard: { borderColor: COLORS.primary, backgroundColor: COLORS.primaryLight },
   iconBox: {
     width: 38,
     height: 38,
@@ -179,26 +195,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 12
   },
-  contentBox: {
-    flex: 1
-  },
-  title: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.textPrimary
-  },
-  message: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    marginTop: 3,
-    lineHeight: 16
-  },
-  timeText: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-    marginTop: 6
-  },
-  deleteBtn: {
-    padding: 6
-  }
+  contentBox: { flex: 1 },
+  title: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
+  message: { fontSize: 12, color: COLORS.textSecondary, marginTop: 3, lineHeight: 16 },
+  timeText: { fontSize: 11, color: COLORS.textMuted, marginTop: 6 }
 });

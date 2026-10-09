@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, RefreshControl, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOWS } from '../../theme/colors';
 import { HeaderCurved } from '../../components/common/HeaderCurved';
+import { ItemActionModal } from '../../components/common/ItemActionModal';
 import { useAuth } from '../../context/AuthContext';
+import { useSocket } from '../../context/SocketContext';
 import { rideApi } from '../../api/ride.api';
 
 export const HistoryScreen = ({ navigation }) => {
   const { user } = useAuth();
+  const { socket } = useSocket();
   const [rides, setRides] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedRide, setSelectedRide] = useState(null);
 
   const fetchHistory = async () => {
     try {
@@ -19,7 +23,7 @@ export const HistoryScreen = ({ navigation }) => {
         setRides(res.data.rides);
       }
     } catch (e) {
-      console.error('[HistoryScreen] Erreur chargement historique :', e);
+      console.warn('[HistoryScreen] Erreur :', e);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -30,9 +34,41 @@ export const HistoryScreen = ({ navigation }) => {
     fetchHistory();
   }, []);
 
+  // Écoute Socket.IO en temps réel
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on('ride:completed', (data) => {
+      fetchHistory();
+    });
+
+    socket.on('ride:accepted', () => {
+      fetchHistory();
+    });
+
+    return () => {
+      socket.off('ride:completed');
+      socket.off('ride:accepted');
+    };
+  }, [socket]);
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchHistory();
+  };
+
+  const handleDeleteRide = () => {
+    if (selectedRide) {
+      setRides((prev) => prev.filter((r) => r._id !== selectedRide._id));
+      setSelectedRide(null);
+    }
+  };
+
+  const handleArchiveRide = () => {
+    if (selectedRide) {
+      setRides((prev) => prev.filter((r) => r._id !== selectedRide._id));
+      setSelectedRide(null);
+    }
   };
 
   const renderRideItem = ({ item }) => {
@@ -44,7 +80,10 @@ export const HistoryScreen = ({ navigation }) => {
     });
 
     return (
-      <View style={styles.rideCard}>
+      <Pressable
+        style={({ pressed }) => [styles.rideCard, pressed && styles.cardPressed]}
+        onLongPress={() => setSelectedRide(item)}
+      >
         <View style={styles.rideHeader}>
           <View style={styles.tierBadge}>
             <Text style={styles.tierText}>{item.tier === 'vip' ? 'VIP' : 'ÉCO'}</Text>
@@ -67,7 +106,7 @@ export const HistoryScreen = ({ navigation }) => {
             </Text>
           </View>
         </View>
-      </View>
+      </Pressable>
     );
   };
 
@@ -78,6 +117,7 @@ export const HistoryScreen = ({ navigation }) => {
         subtitle="Vos courses réalisées"
         user={user}
         onProfilePress={() => navigation.navigate('Settings')}
+        showLocationPin={false}
       />
 
       {loading ? (
@@ -99,6 +139,14 @@ export const HistoryScreen = ({ navigation }) => {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         />
       )}
+
+      <ItemActionModal
+        visible={!!selectedRide}
+        title="Gérer cette course"
+        onClose={() => setSelectedRide(null)}
+        onDelete={handleDeleteRide}
+        onArchive={handleArchiveRide}
+      />
     </View>
   );
 };
@@ -127,6 +175,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 20,
+    paddingBottom: 90,
     gap: 14
   },
   rideCard: {
@@ -136,6 +185,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
     ...SHADOWS.small
+  },
+  cardPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.99 }]
   },
   rideHeader: {
     flexDirection: 'row',

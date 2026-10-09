@@ -1,6 +1,11 @@
 import apiClient from './client';
 
 export const rideApi = {
+  estimateFare: async (params) => {
+    const response = await apiClient.post('/rides/estimate', params);
+    return response.data;
+  },
+
   createRide: async (rideData) => {
     const response = await apiClient.post('/rides', rideData);
     return response.data;

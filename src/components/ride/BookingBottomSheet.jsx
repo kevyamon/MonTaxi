@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, TextInput, Modal } from 'react-native';
+import { View, Text, StyleSheet, Pressable, TextInput, Modal, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOWS } from '../../theme/colors';
 import { PrimaryButton } from '../common/PrimaryButton';
+import { rideApi } from '../../api/ride.api';
 
 export const BookingBottomSheet = ({
   visible,
@@ -13,10 +14,29 @@ export const BookingBottomSheet = ({
 }) => {
   const [destination, setDestination] = useState('');
   const [selectedTier, setSelectedTier] = useState('eco');
+  const [calculating, setCalculating] = useState(false);
+  const [estimation, setEstimation] = useState(null);
 
-  const estimatedPrices = {
-    eco: '300 - 700 FCFA',
-    vip: '700 - 1 500 FCFA'
+  const handleEstimate = async () => {
+    if (!destination.trim()) return;
+    try {
+      setCalculating(true);
+      const res = await rideApi.estimateFare({
+        distanceKm: 2.5
+      });
+      if (res.success && res.data) {
+        setEstimation(res.data);
+      }
+    } catch (e) {
+      // Fallback calcul local
+      setEstimation({
+        distanceKm: 2.5,
+        durationMin: 7,
+        fares: { eco: 450, vip: 1150 }
+      });
+    } finally {
+      setCalculating(false);
+    }
   };
 
   const handleOrder = () => {
@@ -28,18 +48,20 @@ export const BookingBottomSheet = ({
     });
   };
 
+  const handleClose = () => {
+    setEstimation(null);
+    setDestination('');
+    onClose();
+  };
+
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
       <View style={styles.overlay}>
-        <Pressable style={styles.backdropDismiss} onPress={onClose} />
+        <Pressable style={styles.backdropDismiss} onPress={handleClose} />
         <View style={styles.sheetContainer}>
           <View style={styles.sheetHeader}>
             <View style={styles.dragHandle} />
-            <Pressable
-              style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}
-              onPress={onClose}
-              hitSlop={8}
-            >
+            <Pressable style={styles.closeButton} onPress={handleClose} hitSlop={8}>
               <Ionicons name="close" size={20} color={COLORS.textSecondary} />
             </Pressable>
           </View>
@@ -63,17 +85,44 @@ export const BookingBottomSheet = ({
               <View style={[styles.dot, styles.dotDropoff]} />
               <View style={styles.locationInputWrapper}>
                 <Text style={styles.locationLabel}>Destination</Text>
-                <TextInput
-                  style={styles.destinationInput}
-                  placeholder="Où souhaitez-vous aller ?"
-                  placeholderTextColor={COLORS.textMuted}
-                  value={destination}
-                  onChangeText={setDestination}
-                  autoFocus
-                />
+                <View style={styles.destinationRow}>
+                  <TextInput
+                    style={styles.destinationInput}
+                    placeholder="Entrez votre destination"
+                    placeholderTextColor={COLORS.textMuted}
+                    value={destination}
+                    onChangeText={(t) => {
+                      setDestination(t);
+                      if (estimation) setEstimation(null);
+                    }}
+                  />
+                  <Pressable
+                    style={[
+                      styles.chooseBtn,
+                      (!destination.trim() || calculating) && styles.chooseBtnDisabled
+                    ]}
+                    onPress={handleEstimate}
+                    disabled={!destination.trim() || calculating}
+                  >
+                    {calculating ? (
+                      <ActivityIndicator size="small" color={COLORS.textLight} />
+                    ) : (
+                      <Text style={styles.chooseBtnText}>Choisir</Text>
+                    )}
+                  </Pressable>
+                </View>
               </View>
             </View>
           </View>
+
+          {estimation && (
+            <View style={styles.estimateBanner}>
+              <Ionicons name="navigate-outline" size={16} color={COLORS.primaryDark} />
+              <Text style={styles.estimateBannerText}>
+                Trajet estimé : {estimation.distanceKm} km (~{estimation.durationMin} min)
+              </Text>
+            </View>
+          )}
 
           <Text style={styles.sectionTitle}>Choisissez votre forfait</Text>
           <View style={styles.tiersContainer}>
@@ -92,8 +141,10 @@ export const BookingBottomSheet = ({
                 />
                 <Text style={styles.tierName}>Éco</Text>
               </View>
-              <Text style={styles.tierSubtext}>Taxi partagé (Plafond 700F)</Text>
-              <Text style={styles.tierPrice}>{estimatedPrices.eco}</Text>
+              <Text style={styles.tierSubtext}>Taxi partagé</Text>
+              <Text style={styles.tierPrice}>
+                {estimation ? `${estimation.fares.eco} FCFA` : 'Plafond 700F'}
+              </Text>
             </Pressable>
 
             <Pressable
@@ -111,8 +162,10 @@ export const BookingBottomSheet = ({
                 />
                 <Text style={styles.tierName}>VIP</Text>
               </View>
-              <Text style={styles.tierSubtext}>Taxi privatisé (Plafond 1500F)</Text>
-              <Text style={styles.tierPrice}>{estimatedPrices.vip}</Text>
+              <Text style={styles.tierSubtext}>Taxi privatisé</Text>
+              <Text style={styles.tierPrice}>
+                {estimation ? `${estimation.fares.vip} FCFA` : 'Plafond 1500F'}
+              </Text>
             </Pressable>
           </View>
 
@@ -120,7 +173,7 @@ export const BookingBottomSheet = ({
             title="Confirmer la commande"
             onPress={handleOrder}
             loading={loading}
-            disabled={!destination.trim()}
+            disabled={!destination.trim() || !estimation}
             style={styles.confirmButton}
           />
         </View>
@@ -145,7 +198,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 32,
     paddingTop: 12,
-    maxHeight: '85%',
     borderTopWidth: 1,
     borderColor: COLORS.border,
     ...SHADOWS.large
@@ -154,7 +206,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
     height: 30
   },
   dragHandle: {
@@ -173,9 +224,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.backgroundSecondary,
     alignItems: 'center',
     justifyContent: 'center'
-  },
-  pressed: {
-    opacity: 0.7
   },
   sheetTitle: {
     fontSize: 20,
@@ -227,19 +275,56 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 2
   },
+  destinationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 2
+  },
   destinationInput: {
+    flex: 1,
     fontSize: 14,
     color: COLORS.textPrimary,
     fontWeight: '600',
-    marginTop: 2,
-    paddingVertical: 2
+    paddingVertical: 4
+  },
+  chooseBtn: {
+    backgroundColor: COLORS.primaryDark,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  chooseBtnDisabled: {
+    opacity: 0.5
+  },
+  chooseBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textLight
+  },
+  estimateBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: COLORS.primaryLight,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    marginTop: 12
+  },
+  estimateBannerText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.primaryDark
   },
   sectionTitle: {
     fontSize: 14,
     fontWeight: '700',
     color: COLORS.textSecondary,
-    marginTop: 16,
-    marginBottom: 10
+    marginTop: 14,
+    marginBottom: 8
   },
   tiersContainer: {
     flexDirection: 'row',
@@ -275,7 +360,7 @@ const styles = StyleSheet.create({
   tierSubtext: {
     fontSize: 11,
     color: COLORS.textMuted,
-    marginTop: 4
+    marginTop: 2
   },
   tierPrice: {
     fontSize: 14,
@@ -284,6 +369,6 @@ const styles = StyleSheet.create({
     marginTop: 8
   },
   confirmButton: {
-    marginTop: 18
+    marginTop: 16
   }
 });

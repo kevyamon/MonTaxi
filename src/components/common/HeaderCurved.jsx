@@ -4,19 +4,32 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOWS } from '../../theme/colors';
 
-export const HeaderCurved = ({ title = 'MonTaxi', subtitle, user, onProfilePress }) => {
+export const HeaderCurved = ({
+  title = 'MonTaxi',
+  subtitle,
+  user,
+  onProfilePress,
+  showLocationPin = false
+}) => {
   const insets = useSafeAreaInsets();
   const initial = user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'M';
 
   return (
     <View style={[styles.headerContainer, { paddingTop: insets.top + 8 }]}>
-      <StatusBar backgroundColor={COLORS.primary} barStyle="light-content" />
+      <StatusBar backgroundColor={COLORS.primary} barStyle="dark-content" />
 
       <View style={styles.contentRow}>
         <View style={styles.textContainer}>
           <Text style={styles.brandTitle}>{title}</Text>
-          <View style={styles.locationBadge}>
-            <Ionicons name="location-sharp" size={14} color={COLORS.secondary} style={styles.pinIcon} />
+          <View style={styles.subtitleRow}>
+            {showLocationPin && (
+              <Ionicons
+                name="location-sharp"
+                size={14}
+                color={COLORS.textPrimary}
+                style={styles.pinIcon}
+              />
+            )}
             <Text style={styles.addressSubtitle} numberOfLines={1} ellipsizeMode="tail">
               {subtitle || 'Position actuelle'}
             </Text>
@@ -39,7 +52,6 @@ export const HeaderCurved = ({ title = 'MonTaxi', subtitle, user, onProfilePress
           )}
         </Pressable>
       </View>
-      <View style={styles.curvedBottom} />
     </View>
   );
 };
@@ -49,9 +61,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     paddingHorizontal: 20,
     paddingBottom: 22,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-    ...SHADOWS.large
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    ...SHADOWS.medium
   },
   contentRow: {
     flexDirection: 'row',
@@ -65,10 +77,10 @@ const styles = StyleSheet.create({
   brandTitle: {
     fontSize: 26,
     fontWeight: '900',
-    color: COLORS.textLight,
+    color: COLORS.textPrimary,
     letterSpacing: -0.6
   },
-  locationBadge: {
+  subtitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 3
@@ -78,7 +90,8 @@ const styles = StyleSheet.create({
   },
   addressSubtitle: {
     fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.95)',
+    color: COLORS.textPrimary,
+    opacity: 0.85,
     fontWeight: '600',
     flexShrink: 1
   },
@@ -87,8 +100,8 @@ const styles = StyleSheet.create({
     height: 46,
     borderRadius: 23,
     backgroundColor: COLORS.card,
-    borderWidth: 2.5,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
+    borderWidth: 2,
+    borderColor: COLORS.textPrimary,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -112,17 +125,6 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 18,
     fontWeight: '800',
-    color: COLORS.primaryDark
-  },
-  curvedBottom: {
-    position: 'absolute',
-    bottom: -8,
-    left: 45,
-    right: 45,
-    height: 8,
-    backgroundColor: COLORS.primaryDark,
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
-    opacity: 0.35
+    color: COLORS.textPrimary
   }
 });

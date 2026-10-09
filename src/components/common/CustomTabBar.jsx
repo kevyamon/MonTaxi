@@ -16,87 +16,111 @@ export const CustomTabBar = ({ state, descriptors, navigation, unreadNotificatio
   };
 
   return (
-    <View style={[styles.tabBarContainer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-      {state.routes.map((route, index) => {
-        const isFocused = state.index === index;
-        const isCenter = route.name === 'Home';
-        const iconInfo = icons[route.name] || { active: 'ellipse', inactive: 'ellipse-outline', label: route.name };
+    <View
+      style={[
+        styles.floatingContainer,
+        { bottom: insets.bottom > 0 ? insets.bottom + 8 : 16 }
+      ]}
+    >
+      <View style={styles.tabBarInner}>
+        {state.routes.map((route, index) => {
+          const isFocused = state.index === index;
+          const isCenter = route.name === 'Home';
+          const iconInfo = icons[route.name] || {
+            active: 'ellipse',
+            inactive: 'ellipse-outline',
+            label: route.name
+          };
 
-        const onPress = () => {
-          const event = navigation.emit({
-            type: 'tabPress',
-            target: route.key,
-            canPreventDefault: true
-          });
+          const onPress = () => {
+            const event = navigation.emit({
+              type: 'tabPress',
+              target: route.key,
+              canPreventDefault: true
+            });
 
-          if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name);
+            if (!isFocused && !event.defaultPrevented) {
+              navigation.navigate(route.name);
+            }
+          };
+
+          if (isCenter) {
+            return (
+              <View key={route.key} style={styles.centerButtonWrapper}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.centerButton,
+                    isFocused && styles.centerButtonActive,
+                    pressed && styles.buttonPressed
+                  ]}
+                  onPress={onPress}
+                >
+                  <Ionicons
+                    name={isFocused ? 'home' : 'home-outline'}
+                    size={26}
+                    color={COLORS.textLight}
+                  />
+                </Pressable>
+                <Text style={[styles.tabLabel, isFocused && styles.tabLabelActive]}>
+                  {iconInfo.label}
+                </Text>
+              </View>
+            );
           }
-        };
 
-        if (isCenter) {
           return (
-            <View key={route.key} style={styles.centerButtonWrapper}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.centerButton,
-                  isFocused && styles.centerButtonActive,
-                  pressed && styles.buttonPressed
+            <Pressable
+              key={route.key}
+              style={({ pressed }) => [styles.tabItem, pressed && styles.buttonPressed]}
+              onPress={onPress}
+            >
+              <View style={styles.iconContainer}>
+                <Ionicons
+                  name={isFocused ? iconInfo.active : iconInfo.inactive}
+                  size={21}
+                  color={isFocused ? COLORS.tabBarActive : COLORS.tabBarInactive}
+                />
+                {route.name === 'Notifications' && unreadNotifications > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>
+                      {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <Text
+                style={[
+                  styles.tabLabel,
+                  isFocused ? styles.tabLabelActive : styles.tabLabelInactive
                 ]}
-                onPress={onPress}
               >
-                <Ionicons name={isFocused ? 'home' : 'home-outline'} size={28} color={COLORS.textLight} />
-              </Pressable>
-              <Text style={[styles.tabLabel, isFocused && styles.tabLabelActive]}>
                 {iconInfo.label}
               </Text>
-            </View>
+            </Pressable>
           );
-        }
-
-        return (
-          <Pressable
-            key={route.key}
-            style={({ pressed }) => [styles.tabItem, pressed && styles.buttonPressed]}
-            onPress={onPress}
-          >
-            <View style={styles.iconContainer}>
-              <Ionicons
-                name={isFocused ? iconInfo.active : iconInfo.inactive}
-                size={22}
-                color={isFocused ? COLORS.tabBarActive : COLORS.tabBarInactive}
-              />
-              {route.name === 'Notifications' && unreadNotifications > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>
-                    {unreadNotifications > 99 ? '99+' : unreadNotifications}
-                  </Text>
-                </View>
-              )}
-            </View>
-            <Text
-              style={[
-                styles.tabLabel,
-                isFocused ? styles.tabLabelActive : styles.tabLabelInactive
-              ]}
-            >
-              {iconInfo.label}
-            </Text>
-          </Pressable>
-        );
-      })}
+        })}
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  tabBarContainer: {
+  floatingContainer: {
+    position: 'absolute',
+    left: 18,
+    right: 18,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  tabBarInner: {
     flexDirection: 'row',
-    backgroundColor: COLORS.tabBarBackground,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    paddingTop: 8,
-    paddingHorizontal: 8,
+    width: '100%',
+    backgroundColor: COLORS.card,
+    borderRadius: 32,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     alignItems: 'center',
     justifyContent: 'space-around',
     ...SHADOWS.large
@@ -105,7 +129,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4
+    paddingVertical: 2
   },
   iconContainer: {
     position: 'relative',
@@ -116,17 +140,17 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -22
+    marginTop: -20
   },
   centerButton: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 4,
-    borderColor: COLORS.background,
+    borderWidth: 3.5,
+    borderColor: COLORS.card,
     ...SHADOWS.medium
   },
   centerButtonActive: {
@@ -134,32 +158,33 @@ const styles = StyleSheet.create({
   },
   buttonPressed: {
     opacity: 0.85,
-    transform: [{ scale: 0.95 }]
+    transform: [{ scale: 0.94 }]
   },
   tabLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
-    marginTop: 3
+    marginTop: 2
   },
   tabLabelActive: {
-    color: COLORS.tabBarActive
+    color: COLORS.tabBarActive,
+    fontWeight: '700'
   },
   tabLabelInactive: {
     color: COLORS.tabBarInactive
   },
   badge: {
     position: 'absolute',
-    top: -4,
-    right: -10,
+    top: -3,
+    right: -9,
     backgroundColor: COLORS.danger,
-    borderRadius: 10,
-    minWidth: 18,
-    height: 18,
+    borderRadius: 9,
+    minWidth: 16,
+    height: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: 3,
     borderWidth: 1.5,
-    borderColor: COLORS.background
+    borderColor: COLORS.card
   },
   badgeText: {
     color: COLORS.textLight,

@@ -178,6 +178,7 @@ export const HomeScreen = ({ navigation }) => {
         subtitle={locationAddress}
         user={user}
         onProfilePress={() => navigation.navigate('Settings')}
+        showLocationPin={true}
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>

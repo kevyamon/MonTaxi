@@ -14,14 +14,14 @@ export const HomeCardPassenger = ({
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Entrée en fondu fluide
+    // Fondu d'entrée doux
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 600,
+      duration: 500,
       useNativeDriver: true
     }).start();
 
-    // Micro-animation flottante continue de l'illustration
+    // Micro-animation flottante de l'illustration
     const floatLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(floatAnim, {
@@ -38,7 +38,15 @@ export const HomeCardPassenger = ({
     );
     floatLoop.start();
 
-    return () => floatLoop.stop();
+    // Arrêt automatique de l'animation après 60 secondes
+    const timer = setTimeout(() => {
+      floatLoop.stop();
+    }, 60000);
+
+    return () => {
+      clearTimeout(timer);
+      floatLoop.stop();
+    };
   }, [fadeAnim, floatAnim]);
 
   if (!isInCoverage) {
@@ -84,17 +92,6 @@ export const HomeCardPassenger = ({
         <Text style={styles.description}>
           Commandez votre course en un clic avec des chauffeurs certifiés et les meilleurs tarifs de la région.
         </Text>
-
-        <View style={styles.tierTagsRow}>
-          <View style={styles.tierTag}>
-            <Ionicons name="people-outline" size={16} color={COLORS.primaryDark} />
-            <Text style={styles.tierTagText}>Éco (Partagé) ≤ 700F</Text>
-          </View>
-          <View style={[styles.tierTag, styles.vipTag]}>
-            <Ionicons name="shield-checkmark-outline" size={16} color={COLORS.secondaryDark} />
-            <Text style={[styles.tierTagText, styles.vipTagText]}>VIP (Privé) ≤ 1500F</Text>
-          </View>
-        </View>
 
         <PrimaryButton
           title="Commander un taxi"
@@ -152,7 +149,7 @@ const styles = StyleSheet.create({
     marginTop: 8
   },
   imageWrapper: {
-    height: 195,
+    height: 200,
     width: '100%',
     backgroundColor: COLORS.backgroundSecondary,
     position: 'relative'
@@ -192,32 +189,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.textSecondary,
     lineHeight: 18,
-    marginTop: 6
-  },
-  tierTagsRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginVertical: 16
-  },
-  tierTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.primaryLight,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
-    gap: 6
-  },
-  tierTagText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.primaryDark
-  },
-  vipTag: {
-    backgroundColor: COLORS.secondaryLight
-  },
-  vipTagText: {
-    color: COLORS.secondaryDark
+    marginTop: 6,
+    marginBottom: 16
   },
   orderButton: {
     marginTop: 4
