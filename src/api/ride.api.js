@@ -44,5 +44,15 @@ export const rideApi = {
   completeRide: async (id) => {
     const response = await apiClient.patch(`/rides/${id}/complete`);
     return response.data;
+  },
+
+  deleteRide: async (id) => {
+    const response = await apiClient.delete(`/rides/${id}`);
+    return response.data;
+  },
+
+  archiveRide: async (id) => {
+    const response = await apiClient.patch(`/rides/${id}/archive`);
+    return response.data;
   }
 };

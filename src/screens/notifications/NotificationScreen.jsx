@@ -60,21 +60,32 @@ export const NotificationScreen = ({ navigation }) => {
   };
 
   const handleDeleteNotif = async () => {
-    if (selectedNotif) {
-      try {
-        await userApi.deleteNotification(selectedNotif._id);
-        setNotifications((prev) => prev.filter((n) => n._id !== selectedNotif._id));
-      } catch (e) {}
-      setSelectedNotif(null);
+    if (!selectedNotif) return;
+    const notifId = selectedNotif._id;
+    const prev = [...notifications];
+    setNotifications((list) => list.filter((n) => n._id !== notifId));
+    setSelectedNotif(null);
+
+    try {
+      await userApi.deleteNotification(notifId);
+    } catch (e) {
+      console.warn('[NotificationScreen] Erreur suppression notif :', e);
+      setNotifications(prev);
     }
   };
 
-  const handleArchiveNotif = () => {
-    if (selectedNotif) {
-      setNotifications((prev) =>
-        prev.map((n) => (n._id === selectedNotif._id ? { ...n, isRead: true } : n))
-      );
-      setSelectedNotif(null);
+  const handleArchiveNotif = async () => {
+    if (!selectedNotif) return;
+    const notifId = selectedNotif._id;
+    const prev = [...notifications];
+    setNotifications((list) => list.filter((n) => n._id !== notifId));
+    setSelectedNotif(null);
+
+    try {
+      await userApi.archiveNotification(notifId);
+    } catch (e) {
+      console.warn('[NotificationScreen] Erreur archivage notif :', e);
+      setNotifications(prev);
     }
   };
 
@@ -173,7 +184,7 @@ const styles = StyleSheet.create({
   centerContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: COLORS.textPrimary, marginTop: 12 },
   emptySubtitle: { fontSize: 13, color: COLORS.textSecondary, marginTop: 4 },
-  listContent: { paddingHorizontal: 20, paddingBottom: 90, gap: 12 },
+  listContent: { paddingHorizontal: 20, paddingBottom: 130, gap: 12 },
   card: {
     flexDirection: 'row',
     backgroundColor: COLORS.card,

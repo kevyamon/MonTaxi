@@ -57,17 +57,33 @@ export const HistoryScreen = ({ navigation }) => {
     fetchHistory();
   };
 
-  const handleDeleteRide = () => {
-    if (selectedRide) {
-      setRides((prev) => prev.filter((r) => r._id !== selectedRide._id));
-      setSelectedRide(null);
+  const handleDeleteRide = async () => {
+    if (!selectedRide) return;
+    const rideId = selectedRide._id;
+    const previousRides = [...rides];
+    setRides((prev) => prev.filter((r) => r._id !== rideId));
+    setSelectedRide(null);
+
+    try {
+      await rideApi.deleteRide(rideId);
+    } catch (err) {
+      console.warn('[HistoryScreen] Erreur suppression API :', err);
+      setRides(previousRides);
     }
   };
 
-  const handleArchiveRide = () => {
-    if (selectedRide) {
-      setRides((prev) => prev.filter((r) => r._id !== selectedRide._id));
-      setSelectedRide(null);
+  const handleArchiveRide = async () => {
+    if (!selectedRide) return;
+    const rideId = selectedRide._id;
+    const previousRides = [...rides];
+    setRides((prev) => prev.filter((r) => r._id !== rideId));
+    setSelectedRide(null);
+
+    try {
+      await rideApi.archiveRide(rideId);
+    } catch (err) {
+      console.warn('[HistoryScreen] Erreur archivage API :', err);
+      setRides(previousRides);
     }
   };
 
@@ -175,7 +191,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 20,
-    paddingBottom: 90,
+    paddingBottom: 130,
     gap: 14
   },
   rideCard: {

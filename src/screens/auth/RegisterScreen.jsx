@@ -1,15 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  Pressable,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  Image
-} from 'react-native';
+import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOWS } from '../../theme/colors';
@@ -133,14 +123,7 @@ export const RegisterScreen = ({ navigation }) => {
             <Text style={styles.label}>Nom complet</Text>
             <View style={styles.inputWrapper}>
               <Ionicons name="person-outline" size={18} color={COLORS.textSecondary} style={styles.icon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Ex: Jean Kouassi"
-                placeholderTextColor={COLORS.textMuted}
-                value={fullName}
-                onChangeText={setFullName}
-                editable={!loading}
-              />
+              <TextInput style={styles.input} placeholder="Ex: Jean Kouassi" placeholderTextColor={COLORS.textMuted} value={fullName} onChangeText={setFullName} editable={!loading} />
             </View>
           </View>
 
@@ -148,15 +131,7 @@ export const RegisterScreen = ({ navigation }) => {
             <Text style={styles.label}>Numéro de téléphone</Text>
             <View style={styles.inputWrapper}>
               <Ionicons name="call-outline" size={18} color={COLORS.textSecondary} style={styles.icon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Ex: 0701020304"
-                placeholderTextColor={COLORS.textMuted}
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
-                editable={!loading}
-              />
+              <TextInput style={styles.input} placeholder="Ex: 0701020304" placeholderTextColor={COLORS.textMuted} value={phone} onChangeText={setPhone} keyboardType="phone-pad" editable={!loading} />
             </View>
           </View>
 
@@ -164,16 +139,7 @@ export const RegisterScreen = ({ navigation }) => {
             <Text style={styles.label}>Adresse e-mail</Text>
             <View style={styles.inputWrapper}>
               <Ionicons name="mail-outline" size={18} color={COLORS.textSecondary} style={styles.icon} />
-              <TextInput
-                style={styles.input}
-                placeholder="exemple@mail.ci"
-                placeholderTextColor={COLORS.textMuted}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                editable={!loading}
-              />
+              <TextInput style={styles.input} placeholder="exemple@mail.ci" placeholderTextColor={COLORS.textMuted} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" editable={!loading} />
             </View>
           </View>
 
@@ -235,13 +201,14 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: COLORS.primaryLight,
+    overflow: 'hidden',
+    backgroundColor: '#000000',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
     ...SHADOWS.small
   },
-  logoImage: { width: 46, height: 46 },
+  logoImage: { width: 64, height: 64 },
   title: { fontSize: 24, fontWeight: '900', color: COLORS.primaryDark, letterSpacing: -0.5 },
   subtitle: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
   roleSelector: {
@@ -254,15 +221,7 @@ const styles = StyleSheet.create({
     marginBottom: 14
   },
   disabledContainer: { opacity: 0.6 },
-  roleOption: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    borderRadius: 9,
-    gap: 6
-  },
+  roleOption: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8, borderRadius: 9, gap: 6 },
   roleOptionActive: { backgroundColor: COLORS.card, ...SHADOWS.small },
   roleText: { fontSize: 13, fontWeight: '600', color: COLORS.textMuted },
   roleTextActive: { color: COLORS.primaryDark, fontWeight: '700' },
@@ -282,13 +241,7 @@ const styles = StyleSheet.create({
   icon: { marginRight: 8 },
   input: { flex: 1, fontSize: 14, color: COLORS.textPrimary, fontWeight: '500' },
   submitBtn: { marginTop: 8 },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 12
-  },
+  footerRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 12 },
   footerText: { fontSize: 13, color: COLORS.textSecondary },
   loginLink: { fontSize: 13, fontWeight: '700', color: COLORS.primaryDark }
 });

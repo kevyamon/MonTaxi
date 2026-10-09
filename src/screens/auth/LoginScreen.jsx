@@ -1,15 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  Pressable,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  Image
-} from 'react-native';
+import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOWS } from '../../theme/colors';
@@ -186,56 +176,26 @@ export const LoginScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  keyboardView: {
-    flex: 1,
-    backgroundColor: COLORS.background
-  },
-  container: {
-    flexGrow: 1,
-    backgroundColor: COLORS.background,
-    paddingHorizontal: 24
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 32
-  },
+  keyboardView: { flex: 1, backgroundColor: COLORS.background },
+  container: { flexGrow: 1, backgroundColor: COLORS.background, paddingHorizontal: 24 },
+  header: { alignItems: 'center', marginBottom: 32 },
   logoBadge: {
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: COLORS.primaryLight,
+    overflow: 'hidden',
+    backgroundColor: '#000000',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
     ...SHADOWS.small
   },
-  logoImage: {
-    width: 52,
-    height: 52
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '900',
-    color: COLORS.primaryDark,
-    letterSpacing: -0.5
-  },
-  subtitle: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginTop: 6,
-    textAlign: 'center'
-  },
-  form: {
-    gap: 16
-  },
-  inputGroup: {
-    gap: 6
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: COLORS.textPrimary
-  },
+  logoImage: { width: 72, height: 72 },
+  title: { fontSize: 28, fontWeight: '900', color: COLORS.primaryDark, letterSpacing: -0.5 },
+  subtitle: { fontSize: 14, color: COLORS.textSecondary, marginTop: 6, textAlign: 'center' },
+  form: { gap: 16 },
+  inputGroup: { gap: 6 },
+  label: { fontSize: 13, fontWeight: '700', color: COLORS.textPrimary },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -246,35 +206,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     height: 52
   },
-  inputIcon: {
-    marginRight: 10
-  },
-  input: {
-    flex: 1,
-    fontSize: 15,
-    color: COLORS.textPrimary,
-    fontWeight: '500'
-  },
-  eyeButton: {
-    padding: 6
-  },
-  submitButton: {
-    marginTop: 10
-  },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 20
-  },
-  footerText: {
-    fontSize: 14,
-    color: COLORS.textSecondary
-  },
-  registerLink: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.primaryDark
-  }
+  inputIcon: { marginRight: 10 },
+  input: { flex: 1, fontSize: 15, color: COLORS.textPrimary, fontWeight: '500' },
+  eyeButton: { padding: 6 },
+  submitButton: { marginTop: 10 },
+  footerRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 20 },
+  footerText: { fontSize: 14, color: COLORS.textSecondary },
+  registerLink: { fontSize: 14, fontWeight: '700', color: COLORS.primaryDark }
 });

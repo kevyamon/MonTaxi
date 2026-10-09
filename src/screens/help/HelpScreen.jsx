@@ -142,7 +142,7 @@ export const HelpScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  scrollContent: { padding: 20 },
+  scrollContent: { padding: 20, paddingBottom: 140 },
   sectionTitle: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 12 },
   supportButtonsRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
   supportCard: {

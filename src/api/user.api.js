@@ -29,5 +29,10 @@ export const userApi = {
   deleteNotification: async (id) => {
     const response = await apiClient.delete(`/users/notifications/${id}`);
     return response.data;
+  },
+
+  archiveNotification: async (id) => {
+    const response = await apiClient.patch(`/users/notifications/${id}/archive`);
+    return response.data;
   }
 };

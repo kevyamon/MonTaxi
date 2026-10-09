@@ -199,7 +199,7 @@ export const SettingsScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  scrollContent: { padding: 20, gap: 18 },
+  scrollContent: { padding: 20, paddingBottom: 140, gap: 18 },
   sectionCard: {
     backgroundColor: COLORS.card,
     borderRadius: 18,

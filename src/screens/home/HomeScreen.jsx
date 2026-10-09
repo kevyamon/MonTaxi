@@ -24,7 +24,7 @@ export const HomeScreen = ({ navigation }) => {
   const [isInCoverage, setIsInCoverage] = useState(true);
   const [locationLoading, setLocationLoading] = useState(false);
 
-  // Flux Passager
+  const [zoneId, setZoneId] = useState('bonoua');
   const [showBookingSheet, setShowBookingSheet] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchStatus, setSearchStatus] = useState('Recherche d’un chauffeur proche...');
@@ -58,12 +58,14 @@ export const HomeScreen = ({ navigation }) => {
         setCoords(pos);
         const evalResult = await evaluateLocation(pos.latitude, pos.longitude);
         setIsInCoverage(evalResult.isInCoverage);
+        setZoneId(evalResult.zoneId || 'bonoua');
         setLocationAddress(evalResult.address);
       } else {
         // Fallback Bonoua
         const defaultEval = await evaluateLocation(5.2719, -3.5956);
         setCoords({ latitude: 5.2719, longitude: -3.5956 });
         setIsInCoverage(defaultEval.isInCoverage);
+        setZoneId('bonoua');
         setLocationAddress(defaultEval.address);
       }
     } catch (err) {
@@ -109,7 +111,7 @@ export const HomeScreen = ({ navigation }) => {
     };
   }, [socket]);
 
-  const handleOrderConfirm = async ({ pickupAddress, dropoffAddress, tier }) => {
+  const handleOrderConfirm = async ({ pickupAddress, dropoffAddress, dropoffCoords, tier, estimation }) => {
     if (!isInCoverage) {
       showAlert('error', 'Zone non couverte', 'Vous devez être dans une zone d’activité pour commander.');
       return;
@@ -128,8 +130,13 @@ export const HomeScreen = ({ navigation }) => {
         },
         dropoffLocation: {
           address: dropoffAddress,
-          coordinates: [coords.longitude + 0.008, coords.latitude + 0.008]
-        }
+          coordinates: [dropoffCoords.longitude, dropoffCoords.latitude]
+        },
+        fare: estimation ? {
+          distanceKm: estimation.distanceKm,
+          durationMin: estimation.durationMin,
+          totalPrice: estimation.fares[tier]
+        } : undefined
       };
 
       const res = await rideApi.createRide(ridePayload);
@@ -211,6 +218,8 @@ export const HomeScreen = ({ navigation }) => {
         onClose={() => setShowBookingSheet(false)}
         onConfirmOrder={handleOrderConfirm}
         pickupAddress={locationAddress}
+        pickupCoords={coords}
+        zoneId={zoneId}
         loading={orderLoading}
       />
 
@@ -241,6 +250,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background
   },
   scrollContent: {
-    padding: 20
+    padding: 20,
+    paddingBottom: 130
   }
 });
