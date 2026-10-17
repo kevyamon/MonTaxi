@@ -10,6 +10,7 @@ export const HomeCardDriver = ({
   loading,
   totalRides = 0,
   isInCoverage = true,
+  isLocationError = false,
   onRefreshLocation,
   locationLoading = false
 }) => {
@@ -31,6 +32,30 @@ export const HomeCardDriver = ({
     ]).start();
     onToggleStatus();
   };
+
+  if (isLocationError) {
+    return (
+      <View style={[styles.cardContainer, styles.outOfZoneCard]}>
+        <View style={styles.outOfZoneHeader}>
+          <View style={styles.dangerIconBadge}>
+            <Ionicons name="location-outline" size={32} color={COLORS.danger} />
+          </View>
+          <Text style={styles.outOfZoneTitle}>Position introuvable</Text>
+          <Text style={styles.outOfZoneDescription}>
+            Votre signal GPS est inaccessible. Activez la localisation de votre appareil et actualisez votre position pour pouvoir travailler.
+          </Text>
+        </View>
+
+        <PrimaryButton
+          title={locationLoading ? 'Actualisation...' : 'Actualiser ma position'}
+          onPress={onRefreshLocation}
+          loading={locationLoading}
+          icon={!locationLoading ? <Ionicons name="refresh-outline" size={18} color={COLORS.textLight} /> : null}
+          style={styles.refreshButton}
+        />
+      </View>
+    );
+  }
 
   if (!isInCoverage) {
     return (

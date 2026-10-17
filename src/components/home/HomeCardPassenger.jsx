@@ -7,6 +7,7 @@ import { PrimaryButton } from '../common/PrimaryButton';
 export const HomeCardPassenger = ({
   onOrderPress,
   isInCoverage = true,
+  isLocationError = false,
   onRefreshLocation,
   locationLoading = false
 }) => {
@@ -20,6 +21,30 @@ export const HomeCardPassenger = ({
       useNativeDriver: true
     }).start();
   }, [fadeAnim]);
+
+  if (isLocationError) {
+    return (
+      <Animated.View style={[styles.cardContainer, styles.outOfZoneCard, { opacity: fadeAnim }]}>
+        <View style={styles.outOfZoneHeader}>
+          <View style={styles.dangerIconBadge}>
+            <Ionicons name="location-outline" size={32} color={COLORS.danger} />
+          </View>
+          <Text style={styles.outOfZoneTitle}>Position introuvable</Text>
+          <Text style={styles.outOfZoneDescription}>
+            Impossible de détecter votre localisation GPS. Veuillez vérifier que votre GPS est activé et appuyer sur le bouton ci-dessous pour actualiser.
+          </Text>
+        </View>
+
+        <PrimaryButton
+          title={locationLoading ? 'Actualisation...' : 'Actualiser ma position'}
+          onPress={onRefreshLocation}
+          loading={locationLoading}
+          icon={!locationLoading ? <Ionicons name="refresh-outline" size={18} color={COLORS.textLight} /> : null}
+          style={styles.refreshButton}
+        />
+      </Animated.View>
+    );
+  }
 
   if (!isInCoverage) {
     return (

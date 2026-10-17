@@ -24,6 +24,7 @@ export const HomeScreen = ({ navigation }) => {
   const [coords, setCoords] = useState({ latitude: 5.2719, longitude: -3.5956 });
   const [locationAddress, setLocationAddress] = useState('Recherche de votre position...');
   const [isInCoverage, setIsInCoverage] = useState(true);
+  const [isLocationError, setIsLocationError] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
   const [zoneId, setZoneId] = useState('bonoua');
   const [showBookingSheet, setShowBookingSheet] = useState(false);
@@ -66,23 +67,53 @@ export const HomeScreen = ({ navigation }) => {
       const pos = await getCurrentPosition();
       if (pos) {
         setCoords(pos);
+        setIsLocationError(false);
         const evalResult = await evaluateLocation(pos.latitude, pos.longitude);
         setIsInCoverage(evalResult.isInCoverage);
         setZoneId(evalResult.zoneId || 'bonoua');
         setLocationAddress(evalResult.address);
+
+        // Si profil chauffeur : synchronisation active des coordonnées GPS avec le serveur
+        if (isDriver) {
+          try {
+            await driverApi.updateLocation(pos.latitude, pos.longitude);
+          } catch (e) {
+            console.warn('[HomeScreen] Erreur synchronisation position chauffeur :', e);
+          }
+
+          // Si le chauffeur est hors zone, basculement automatique hors ligne
+          if (!evalResult.isInCoverage && isOnline) {
+            setIsOnline(false);
+            updateUser({ driverInfo: { ...user?.driverInfo, isOnline: false } });
+            try {
+              await driverApi.updateStatus(false, pos);
+            } catch (e) {}
+          }
+        }
       } else {
-        // Position introuvable ou connexion indisponible : verrouillage hors zone
+        // Position introuvable ou signal GPS indisponible
+        setIsLocationError(true);
         setIsInCoverage(false);
         setLocationAddress('Position non trouvée, veuillez actualiser');
+
+        // Sécurité chauffeur si le signal est perdu
+        if (isDriver && isOnline) {
+          setIsOnline(false);
+          updateUser({ driverInfo: { ...user?.driverInfo, isOnline: false } });
+          try {
+            await driverApi.updateStatus(false);
+          } catch (e) {}
+        }
       }
     } catch (err) {
       console.warn('[HomeScreen] Erreur chargement position :', err);
+      setIsLocationError(true);
       setIsInCoverage(false);
       setLocationAddress('Position non trouvée, veuillez actualiser');
     } finally {
       setLocationLoading(false);
     }
-  }, []);
+  }, [isDriver, isOnline, user?.driverInfo, updateUser]);
 
   useEffect(() => {
     refreshLocation();
@@ -108,6 +139,10 @@ export const HomeScreen = ({ navigation }) => {
   }, [socket]);
 
   const handleOrderConfirm = async ({ pickupAddress, dropoffAddress, dropoffCoords, tier, estimation }) => {
+    if (isLocationError) {
+      showAlert('warning', 'Position introuvable', 'Veuillez actualiser votre position GPS avant de commander.');
+      return;
+    }
     if (!isInCoverage) {
       showAlert('error', 'Zone non couverte', 'Vous devez être dans une zone d’activité pour commander.');
       return;
@@ -149,6 +184,14 @@ export const HomeScreen = ({ navigation }) => {
 
   const handleToggleOnline = async () => {
     const newStatus = !isOnline;
+    if (newStatus && isLocationError) {
+      showAlert(
+        'warning',
+        'Position introuvable',
+        'Veuillez activer votre localisation et actualiser votre position avant de passer en ligne.'
+      );
+      return;
+    }
     if (newStatus && !isInCoverage) {
       showAlert(
         'warning',
@@ -193,6 +236,7 @@ export const HomeScreen = ({ navigation }) => {
         showLocationPin={true}
         isDriver={isDriver}
         isOnline={isOnline}
+        locationLoading={locationLoading}
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -210,6 +254,7 @@ export const HomeScreen = ({ navigation }) => {
             loading={statusLoading}
             totalRides={user?.driverInfo?.totalRides || 0}
             isInCoverage={isInCoverage}
+            isLocationError={isLocationError}
             onRefreshLocation={refreshLocation}
             locationLoading={locationLoading}
           />
@@ -217,6 +262,7 @@ export const HomeScreen = ({ navigation }) => {
           <HomeCardPassenger
             onOrderPress={() => setShowBookingSheet(true)}
             isInCoverage={isInCoverage}
+            isLocationError={isLocationError}
             onRefreshLocation={refreshLocation}
             locationLoading={locationLoading}
           />

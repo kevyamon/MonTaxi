@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, Image, ActivityIndicator } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOWS } from '../../theme/colors';
@@ -14,6 +15,13 @@ import { getApiErrorMessage } from '../../api/client';
 
 export const SettingsScreen = () => {
   const { user, logout, updateUser } = useAuth();
+  const scrollViewRef = useRef(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+    }, [])
+  );
 
   const [fullName, setFullName] = useState(user?.fullName || '');
   const [phone, setPhone] = useState(user?.phone || '');
@@ -129,7 +137,7 @@ export const SettingsScreen = () => {
     <View style={styles.container}>
       <HeaderCurved title="Paramètres" subtitle="Gestion de votre compte" user={user} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView ref={scrollViewRef} contentContainerStyle={styles.scrollContent}>
         {/* Section Photo de Profil Cloudinary */}
         <View style={styles.avatarSectionCard}>
           <View style={styles.avatarRow}>
