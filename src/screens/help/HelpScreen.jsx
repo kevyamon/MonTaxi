@@ -33,11 +33,7 @@ export const HelpScreen = ({ navigation }) => {
   };
 
   const handleAIAssistant = () => {
-    showAlert(
-      'info',
-      'Assistant IA MonTaxi',
-      'Posez vos questions sur le fonctionnement des forfaits Éco/VIP, des tarifs ou de l’application.'
-    );
+    navigation.navigate('AIAssistant');
   };
 
   const passengerCards = [
