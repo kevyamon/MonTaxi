@@ -26,7 +26,9 @@
         "ACCESS_COARSE_LOCATION",
         "ACCESS_BACKGROUND_LOCATION",
         "POST_NOTIFICATIONS",
-        "INTERNET"
+        "INTERNET",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
       ]
     },
     "plugins": [
@@ -56,8 +58,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": ""
+        "projectId": "93d5e4f9-b8a0-4e5f-a328-660b55d2393b"
       }
-    }
+    },
+    "owner": "kevyllc"
   }
 }

@@ -9,6 +9,7 @@ import {
 import { authApi } from '../api/auth.api';
 import { userApi } from '../api/user.api';
 import { getApiErrorMessage } from '../api/client';
+import { registerForPushNotificationsAsync } from '../services/pushNotification.service';
 
 const AuthContext = createContext(null);
 
@@ -16,6 +17,17 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const syncPushToken = async () => {
+    try {
+      const pushToken = await registerForPushNotificationsAsync();
+      if (pushToken) {
+        await authApi.updatePushToken(pushToken);
+      }
+    } catch (e) {
+      console.warn('[AuthContext] Échec synchronisation jeton push :', e?.message);
+    }
+  };
 
   const initAuth = useCallback(async () => {
     try {
@@ -25,6 +37,9 @@ export const AuthProvider = ({ children }) => {
       if (storedToken && storedUser) {
         setToken(storedToken);
         setUser(storedUser);
+
+        // Synchroniser le jeton push en tâche de fond
+        syncPushToken();
 
         // Rafraîchir les informations utilisateur en arrière-plan
         userApi
@@ -57,6 +72,7 @@ export const AuthProvider = ({ children }) => {
         setToken(tokens.accessToken);
         await saveAuthTokens(tokens.accessToken, tokens.refreshToken);
         await saveUserProfile(userData);
+        syncPushToken();
         return userData;
       }
       throw new Error(res.message || 'Échec de la connexion');
@@ -74,6 +90,7 @@ export const AuthProvider = ({ children }) => {
         setToken(tokens.accessToken);
         await saveAuthTokens(tokens.accessToken, tokens.refreshToken);
         await saveUserProfile(newUser);
+        syncPushToken();
         return newUser;
       }
       throw new Error(res.message || 'Échec de l’inscription');
@@ -83,6 +100,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
+    try {
+      await authApi.updatePushToken(null);
+    } catch (e) {}
     setUser(null);
     setToken(null);
     await clearAuthSession();
